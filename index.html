@@ -334,7 +334,13 @@ function epiAlerts(){
   });
   return out.sort((x,y)=> x.s===y.s?0 : x.s==='red'?-1:1);
 }
-function activeCordes(){ return objs(DB.cordes).filter(c=>!/R[ÉE]FORM/i.test(String(c.STATUT||''))); }
+function isRealCorde(c){
+  const cat = String(c.CATEGORIE||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+  if(cat.startsWith('CATEGORIE')) return false;                 // en-tête répété de section
+  if(!c.INDICATIF && !c.MODELE && !c['NUMERO REF']) return false; // titre de section (ex. VIMP CAISSE)
+  return true;
+}
+function activeCordes(){ return objs(DB.cordes).filter(c=>isRealCorde(c) && !/R[ÉE]FORM/i.test(String(c.STATUT||''))); }
 function cordeAlerts(){
   const out=[];
   activeCordes().forEach(c=>{
@@ -674,6 +680,7 @@ async function load(force){
     syncState(''); if(force) toast('Synchronisation avec le Google Sheet…');
     DB = await api.load();
     syncState('ok');
+    if(DB.warnings && DB.warnings.length){ toast('⚠ ' + DB.warnings[0]); console.warn(DB.warnings); }
     renderHome(); renderEpi(); renderCordes(); renderPerso(); renderInv();
     if(document.querySelector('.page.on')?.id==='setup') show('p-accueil');
     if(force) toast('Données à jour ✔');
