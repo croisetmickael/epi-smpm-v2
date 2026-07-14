@@ -59,6 +59,16 @@ label{font-size:.74rem;font-weight:600;color:var(--mut);text-transform:uppercase
 .search{margin-bottom:12px;position:relative}
 .search input{padding-left:36px}
 .search::before{content:'⌕';position:absolute;left:12px;top:9px;font-size:1.15rem;color:var(--mut)}
+.sugg{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border-radius:12px;
+  box-shadow:0 8px 28px rgba(20,28,46,.18);z-index:55;overflow:hidden;max-height:290px;overflow-y:auto}
+.sugg button{display:flex;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--line);
+  padding:10px 12px;font-family:inherit;cursor:pointer;align-items:center;gap:9px}
+.sugg button:last-child{border-bottom:none}
+.sugg button:hover,.sugg button:active{background:#F0F2F7}
+.sugg .si{font-size:1rem;flex:none}
+.sugg .st b{font-size:.9rem;display:block}
+.sugg .st small{color:var(--mut);font-size:.76rem}
+.sugg mark{background:#FFE9A8;border-radius:3px;padding:0 1px}
 
 /* ---- Accueil ---- */
 .hero{background:linear-gradient(160deg,var(--navy),var(--navy2));border-radius:var(--r);color:#fff;
@@ -177,13 +187,14 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
 
   <!-- ================= EPI ================= -->
   <section class="page" id="p-epi">
-    <div class="search"><input id="q-epi" placeholder="Rechercher un agent…"></div>
+    <div class="search"><input id="q-epi" placeholder="Rechercher un agent ou un n° de série…"></div>
     <div id="list-epi"></div>
   </section>
 
   <!-- ================= CORDES ================= -->
   <section class="page" id="p-cordes">
-    <div class="search"><input id="q-cordes" placeholder="Rechercher une corde (indicatif, modèle…)"></div>
+    <div class="search"><input id="q-cordes" placeholder="Rechercher une corde (indicatif, n° réf, modèle…)"></div>
+    <div id="cordefilters" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
     <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
       <button class="btn" id="btnaddcorde">+ Ajouter une corde</button></div>
     <div id="list-cordes"></div>
@@ -451,9 +462,20 @@ function openAlert(i){
 }
 
 /* ---------------- Rendu EPI ---------------- */
+function epiMatch(a, q){                     // recherche nom OU n'importe quel numéro/type
+  if((a.NOM+' '+a.PRENOM).toLowerCase().includes(q)) return {hit:true, via:null};
+  for(const it of EPI_ITEMS){
+    for(const col of [it.n, it.t, it.d]){
+      if(col && String(a[col]||'').toLowerCase().includes(q))
+        return {hit:true, via: it.label+' — '+(a[it.n]||a[col])};
+    }
+  }
+  return {hit:false};
+}
 function renderEpi(){
   const q = ($('#q-epi').value||'').toLowerCase();
-  const list = objs(DB.epi).filter(a=>(a.NOM+' '+a.PRENOM).toLowerCase().includes(q));
+  const list = [];
+  objs(DB.epi).forEach(a=>{ const m = q?epiMatch(a,q):{hit:true,via:null}; if(m.hit){ a.__via=m.via; list.push(a); } });
   $('#list-epi').innerHTML = list.map((a,i)=>{
     let worst='ok';
     EPI_ITEMS.forEach(it=>{ if(it.d){ const s=epiStatus(a[it.d]);
@@ -461,7 +483,7 @@ function renderEpi(){
     const chip = worst==='red'?'<span class="chip red">EXPIRÉ</span>':worst==='amb'?'<span class="chip amb">À SUIVRE</span>':'<span class="chip grn">OK</span>';
     return `<button class="rowbtn" onclick="editEpiByRow(${a.__row})">
       <span class="av">${esc((a.NOM||'?')[0]+(a.PRENOM||' ')[0])}</span>
-      <span class="tx"><b>${esc(a.NOM)} ${esc(a.PRENOM)}</b><small>${esc(a['BAUDRIER Type']||'')}</small></span>
+      <span class="tx"><b>${esc(a.NOM)} ${esc(a.PRENOM)}</b><small>${a.__via?'🔎 '+esc(a.__via):esc(a['BAUDRIER Type']||'')}</small></span>
       ${chip}<span class="ar">›</span></button>`;
   }).join('') || '<div class="empty">Aucun agent trouvé.</div>';
 }
@@ -516,20 +538,43 @@ async function confirmReformEpi(row){
 }
 
 /* ---------------- Rendu CORDES ---------------- */
+function allCordes(){ return objs(DB.cordes).filter(isRealCorde); }
+function cordeVisu(c){                       // visuel basé sur le STATUT officiel du RECAP
+  const st = String(c.STATUT||'').toUpperCase();
+  if(st.includes('CRITIQUE'))      return {k:'CRITIQUE',  chip:'<span class="chip red">⛔ CRITIQUE</span>',      col:'#8E1216', dot:'red'};
+  if(/R[ÉE]FORM/.test(st))         return {k:'REFORMEE',  chip:'<span class="chip red">RÉFORMÉE</span>',        col:'var(--red)', dot:'red'};
+  if(st.includes('SURVEILLER'))    return {k:'SURVEILLER',chip:'<span class="chip amb">À SURVEILLER</span>',    col:'var(--amber)', dot:'amb'};
+  if(st.includes('SERVICE'))       return {k:'SERVICE',   chip:'<span class="chip grn">EN SERVICE</span>',      col:'var(--green)', dot:'grn'};
+  const cs = cordeStatus(c);
+  if(cs.s==='red') return {k:'REFORMEE', chip:'<span class="chip red">À RÉFORMER</span>', col:'var(--red)', dot:'red'};
+  if(cs.s==='amb') return {k:'SURVEILLER', chip:'<span class="chip amb">SURVEILLER</span>', col:'var(--amber)', dot:'amb'};
+  return {k:'SERVICE', chip:'<span class="chip gry">—</span>', col:'var(--navy)', dot:'gry'};
+}
+let cordeFilter = 'TOUTES';
+function setCordeFilter(f){ cordeFilter = f; renderCordes(); }
 function renderCordes(){
   const q = ($('#q-cordes').value||'').toLowerCase();
-  const list = activeCordes().filter(c=>Object.values(c).join(' ').toLowerCase().includes(q));
+  const all = allCordes();
+  const counts = {TOUTES:all.length, SERVICE:0, SURVEILLER:0, REFORMEE:0, CRITIQUE:0};
+  all.forEach(c=>{ counts[cordeVisu(c).k] = (counts[cordeVisu(c).k]||0)+1; });
+  const FB = [['TOUTES','Toutes','gry'],['SERVICE','En service','grn'],['SURVEILLER','À surveiller','amb'],['REFORMEE','Réformées','red'],['CRITIQUE','⛔ Critiques','red']];
+  $('#cordefilters').innerHTML = FB.map(([k,l,cl])=>
+    `<button class="chip ${cl}" style="border:2px solid ${cordeFilter===k?'var(--navy)':'transparent'};cursor:pointer;font-family:inherit"
+      onclick="setCordeFilter('${k}')">${l} · ${counts[k]||0}</button>`).join(' ');
+  const list = all
+    .filter(c=>cordeFilter==='TOUTES' || cordeVisu(c).k===cordeFilter)
+    .filter(c=>Object.values(c).join(' ').toLowerCase().includes(q));
   $('#list-cordes').innerHTML = list.map(c=>{
-    const st = cordeStatus(c);
-    const chip = st.s==='red'?'<span class="chip red">À RÉFORMER</span>':st.s==='amb'?'<span class="chip amb">SURVEILLER</span>':st.s==='gry'?'<span class="chip gry">?</span>':'<span class="chip grn">OK</span>';
-    return `<button class="rowbtn" onclick="editCordeByRow(${c.__row})">
-      <span class="av" style="background:${st.s==='red'?'var(--red)':st.s==='amb'?'var(--amber)':'var(--navy)'}">${esc((c.CATEGORIE||'C')[0])}</span>
+    const v = cordeVisu(c);
+    const cs = cordeStatus(c);
+    return `<button class="rowbtn" onclick="editCordeByRow(${c.__row})" style="${v.k==='CRITIQUE'?'outline:2px solid var(--red)':''}">
+      <span class="av" style="background:${v.col}">${esc((c.CATEGORIE||'C')[0])}</span>
       <span class="tx"><b>${esc(c.INDICATIF||c['NUMERO REF']||'—')}</b>
-      <small>${esc(c.MODELE||'')} · ${esc(c.LONGUEUR||'')} · ${esc(c.AFFECTATION||c.STOCKAGE||'')}${st.age!=null?' · '+st.age+' ans':''}</small></span>
-      ${chip}<span class="ar">›</span></button>`;
-  }).join('') || '<div class="empty">Aucune corde trouvée.</div>';
+      <small>${esc(c.MODELE||'')} · ${esc(c.LONGUEUR||'')} · ${esc(c.AFFECTATION||c.STOCKAGE||'')}${c.FIN?' · fin '+esc(c.FIN):''}${cs.age!=null?' · '+cs.age+' ans':''}</small></span>
+      ${v.chip}<span class="ar">›</span></button>`;
+  }).join('') || '<div class="empty">Aucune corde dans cette catégorie.</div>';
 }
-function editCordeByRow(row){ const c=activeCordes().find(x=>x.__row===row); if(c) editCorde(c); }
+function editCordeByRow(row){ const c=allCordes().find(x=>x.__row===row); if(c) editCorde(c); }
 
 function cordeForm(c){
   const F=[['CATEGORIE','Catégorie'],['AFFECTATION','Affectation'],['INDICATIF','Indicatif'],['LONGUEUR','Longueur'],
@@ -702,6 +747,76 @@ async function confirmAddInv(emplacement){
   await write({action:'addInv', code:invCode(), emplacement,
     article:$('#inv-a').value.trim(), quantite:$('#inv-q').value.trim()}, 'Article ajouté ✔');
 }
+
+/* ---------------- Suggestions de recherche (dès 3 caractères) ---------------- */
+function hi(text, q){ // surligne la partie trouvée
+  const t=String(text||''); const i=t.toLowerCase().indexOf(q.toLowerCase());
+  if(i<0) return esc(t);
+  return esc(t.slice(0,i))+'<mark>'+esc(t.slice(i,i+q.length))+'</mark>'+esc(t.slice(i+q.length));
+}
+function buildSuggestions(kind, q){
+  const out=[]; const ql=q.toLowerCase();
+  if(kind==='epi'){
+    objs(DB.epi).forEach(a=>{
+      const nomc = a.NOM+' '+a.PRENOM;
+      if(nomc.toLowerCase().includes(ql)) out.push({ic:'👤', t:nomc, s:'Agent', v:nomc, row:a.__row, kind:'epi'});
+      EPI_ITEMS.forEach(it=>{
+        [it.n,it.t].forEach(col=>{
+          const val=col?String(a[col]||''):'';
+          if(val && val.toLowerCase().includes(ql))
+            out.push({ic:'🦺', t:val, s:it.label+' · '+nomc, v:val, row:a.__row, kind:'epi'});
+        });
+      });
+    });
+  } else if(kind==='cordes'){
+    allCordes().forEach(c=>{
+      [['INDICATIF','🧗'],['NUMERO REF','#'],['MODELE','🏷']].forEach(([col,ic])=>{
+        const val=String(c[col]||'');
+        if(val && val.toLowerCase().includes(ql))
+          out.push({ic, t:val, s:(c.CATEGORIE||'')+' · '+(c.AFFECTATION||c.STOCKAGE||'')+' · '+String(c.STATUT||''), v:val, row:c.__row, kind:'cordes'});
+      });
+    });
+  } else if(kind==='inv'){
+    objs(DB.inventaire).forEach(i=>{
+      if((i.ARTICLE||'').toLowerCase().includes(ql))
+        out.push({ic:'🗂', t:i.ARTICLE, s:i.EMPLACEMENT+(i.QUANTITE?' · qté '+i.QUANTITE:''), v:i.ARTICLE, kind:'inv'});
+      else if((i.EMPLACEMENT||'').toLowerCase().includes(ql))
+        out.push({ic:'📦', t:i.EMPLACEMENT, s:i.ARTICLE, v:i.EMPLACEMENT, kind:'inv'});
+    });
+  }
+  // dédoublonne sur le texte affiché, limite à 8
+  const seen={}; return out.filter(o=>{ const k=o.ic+o.t+o.s; if(seen[k]) return false; seen[k]=1; return true; }).slice(0,8);
+}
+function attachSuggest(inputId, kind, onPick){
+  const inp = document.getElementById(inputId);
+  const wrap = inp.parentElement; // .search
+  let box = null;
+  function close(){ if(box){ box.remove(); box=null; } }
+  function open(){
+    const q = inp.value.trim();
+    close();
+    if(q.length < 3 || !DB) return;
+    const items = buildSuggestions(kind, q);
+    if(!items.length) return;
+    box = document.createElement('div'); box.className='sugg';
+    box.innerHTML = items.map((o,i)=>
+      `<button data-i="${i}"><span class="si">${o.ic}</span>
+       <span class="st"><b>${hi(o.t,q)}</b><small>${esc(o.s)}</small></span></button>`).join('');
+    box.querySelectorAll('button').forEach(b=>b.addEventListener('mousedown', e=>{
+      e.preventDefault();
+      const o = items[+b.dataset.i];
+      inp.value = o.v; close(); onPick(o);
+    }));
+    wrap.appendChild(box);
+  }
+  inp.addEventListener('input', open);
+  inp.addEventListener('focus', open);
+  inp.addEventListener('blur', ()=>setTimeout(close, 150));
+  inp.addEventListener('keydown', e=>{ if(e.key==='Escape') close(); });
+}
+attachSuggest('q-epi','epi', o=>{ renderEpi(); if(o.row) editEpiByRow(o.row); });
+attachSuggest('q-cordes','cordes', o=>{ cordeFilter='TOUTES'; renderCordes(); if(o.row) editCordeByRow(o.row); });
+attachSuggest('q-inv','inv', o=>{ renderInv(); });
 
 /* ---------------- Modale / navigation / chargement ---------------- */
 function openSheet(html){ $('#sheetbox').innerHTML=html; $('#ovl').classList.add('show'); }
