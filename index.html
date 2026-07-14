@@ -638,13 +638,6 @@ function showFiche(){
   if(!v){ $('#fiche').innerHTML='<div class="empty">Sélectionnez un personnel pour afficher sa fiche.</div>'; return; }
   const [nom,prenom] = v.split('|');
   const a = objs(DB.agents).find(x=>x.NOM===nom && x.PRENOM===prenom) || {NOM:nom,PRENOM:prenom};
-  const e = objs(DB.epi).find(x=>x.NOM===nom) || {};
-  let rows = EPI_ITEMS.map(it=>{
-    const num = e[it.n]||''; if(!num && !(it.t&&e[it.t])) return '';
-    const st = it.d ? epiStatus(e[it.d]) : null;
-    return `<div class="alrow"><span class="dot ${st==='red'?'red':st==='amb'?'amb':'gry'}" ${st?'':'style="background:#CFD5E0"'}></span>
-      <div class="tx"><b>${it.label}</b><small>${esc(it.t?e[it.t]||'':'')} ${esc(num)}${it.d&&e[it.d]?' · validité '+esc(e[it.d]):''}</small></div></div>`;
-  }).join('');
   $('#fiche').innerHTML = `
     <div class="card"><h3 class="disp" style="font-size:1.3rem;text-transform:uppercase">${esc(a.NOM)} ${esc(a.PRENOM)}</h3>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:10px;font-size:.9rem">
@@ -652,12 +645,7 @@ function showFiche(){
         <div><b>Centre</b><br>${esc(a.CENTRE||'—')}</div><div><b>Équipe</b><br>${esc(a.EQUIPE||'—')}</div>
         <div><b>Téléphone</b><br>${a.TEL?`<a href="tel:${esc(a.TEL)}">${esc(a.TEL)}</a>`:'—'}</div>
         <div><b>Mail</b><br>${a.MAIL?`<a href="mailto:${esc(a.MAIL)}">${esc(a.MAIL)}</a>`:'—'}</div></div></div>
-    <div class="sect">Équipements attribués</div>
-    <div class="card">${rows||'<div class="empty">Aucun EPI enregistré pour cet agent.</div>'}</div>
-    <div style="display:flex;gap:10px">
-      <button class="btn ghost" style="flex:1" onclick="editAgent()">Modifier la fiche</button>
-      ${e.__row?`<button class="btn" style="flex:1" onclick="editEpiByRow(${e.__row})">Modifier ses EPI</button>`:''}
-    </div>`;
+    <button class="btn ghost" style="width:100%" onclick="editAgent()">Modifier la fiche</button>`;
   window._curAgent = a;
 }
 const AGENT_FIELDS = [['FONCTION','Fonction'],['GRADE','Grade'],['CENTRE','Centre'],['EQUIPE','Équipe'],['TEL','Téléphone'],['MAIL','Mail']];
