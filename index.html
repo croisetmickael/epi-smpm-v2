@@ -171,6 +171,8 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
     </div>
     <div class="sect" id="alerttitle">À gérer</div>
     <div class="card" id="alertlist"><div class="loader"><div class="spin"></div>Chargement…</div></div>
+    <div class="sect">Synthèse officielle</div>
+    <div class="card" id="synthese"><div class="empty">Chargement de la synthèse…</div></div>
   </section>
 
   <!-- ================= EPI ================= -->
@@ -343,26 +345,52 @@ function isRealCorde(c){
 function activeCordes(){ return objs(DB.cordes).filter(c=>isRealCorde(c) && !/R[ÉE]FORM/i.test(String(c.STATUT||''))); }
 function cordeAlerts(){
   const out=[];
-  activeCordes().forEach(c=>{
-    const st = cordeStatus(c);
-    if(st.s==='red'||st.s==='amb')
-      out.push({fam:'CORDE', s:st.s, who:c.INDICATIF||c['NUMERO REF']||'Corde',
-        what:(c.MODELE||'')+' '+(c.LONGUEUR||''), info:(st.age!=null?st.age+' ans · ':'')+st.why, corde:c});
+  objs(DB.cordes).filter(isRealCorde).forEach(c=>{
+    const st = String(c.STATUT||'').toUpperCase();
+    if(st.includes('CRITIQUE'))
+      out.push({fam:'CORDE', s:'red', who:c.INDICATIF||c['NUMERO REF']||'Corde',
+        what:(c.MODELE||'')+' '+(c.LONGUEUR||''), info:'RÉFORMÉE CRITIQUE — seuil '+((DB.dashboards&&DB.dashboards.cordes.seuil)||'9')+' ans dépassé, retirer immédiatement', corde:c, prio:0});
+    else if(/R[ÉE]FORM/.test(st))
+      out.push({fam:'CORDE', s:'red', who:c.INDICATIF||c['NUMERO REF']||'Corde',
+        what:(c.MODELE||'')+' '+(c.LONGUEUR||''), info:'RÉFORMÉE — durée de vie '+((DB.dashboards&&DB.dashboards.cordes.duree)||'7')+' ans dépassée, à retirer', corde:c, prio:1});
+    else if(st.includes('SURVEILLER'))
+      out.push({fam:'CORDE', s:'amb', who:c.INDICATIF||c['NUMERO REF']||'Corde',
+        what:(c.MODELE||'')+' '+(c.LONGUEUR||''), info:'À SURVEILLER — échéance '+(c.FIN||'proche'), corde:c, prio:2});
+    else {
+      const cs = cordeStatus(c);   // filet de sécurité si le STATUT n'est pas renseigné
+      if(cs.s==='red'||cs.s==='amb')
+        out.push({fam:'CORDE', s:cs.s, who:c.INDICATIF||c['NUMERO REF']||'Corde',
+          what:(c.MODELE||'')+' '+(c.LONGUEUR||''), info:cs.why, corde:c, prio:3});
+    }
   });
-  return out.sort((x,y)=> x.s===y.s?0 : x.s==='red'?-1:1);
+  return out.sort((x,y)=>(x.prio??9)-(y.prio??9));
 }
 
 /* ---------------- Rendu ACCUEIL ---------------- */
+function num(x){ const n=parseInt(String(x||'').replace(/\D/g,'')); return isNaN(n)?0:n; }
 function renderHome(){
   const e = epiAlerts(), c = cordeAlerts(), ref = objs(DB.reformes);
-  $('#n-epi').textContent = e.length; $('#n-corde').textContent = c.length;
-  $('#n-ref').textContent = ref.length; $('#n-all').textContent = e.length + c.length;
-  document.querySelector('[data-f="EPI"]').classList.toggle('alert', e.some(a=>a.s==='red'));
-  document.querySelector('[data-f="CORDE"]').classList.toggle('alert', c.some(a=>a.s==='red'));
-  const tot = e.length + c.length;
+  const D = DB.dashboards || {};
+  const SE = D.epi || {}, TC = D.cordes || {};
+  // Chiffres OFFICIELS : feuille SYNTHESE (EPI) et TABLEAU DE BORD (cordes)
+  const nEpi = (SE.perimes!==undefined && SE.perimes!=='') ? num(SE.perimes)+num(SE.sous2ans) : e.length;
+  const st = TC.statuts || {};
+  const nCorde = Object.keys(st).length
+    ? num(st['À SURVEILLER'])+num(st['RÉFORMÉE'])+num(st['RÉFORMÉE CRITIQUE'])
+    : c.length;
+  const nRef = (SE.reformes!==undefined && SE.reformes!=='') ? num(SE.reformes) + ref.filter(r=>r.FAMILLE==='CORDE').length : ref.length;
+  $('#n-epi').textContent = nEpi; $('#n-corde').textContent = nCorde;
+  $('#n-ref').textContent = nRef; $('#n-all').textContent = nEpi + nCorde;
+  document.querySelector('[data-f="EPI"]').classList.toggle('alert', num(SE.perimes)>0 || e.some(a=>a.s==='red'));
+  document.querySelector('[data-f="CORDE"]').classList.toggle('alert', num(st['RÉFORMÉE'])+num(st['RÉFORMÉE CRITIQUE'])>0 || c.some(a=>a.s==='red'));
+  const tot = nEpi + nCorde;
   const b = $('#bdg'); b.hidden = !tot; b.textContent = tot;
   $('#herodate').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  $('#herosum').textContent = tot ? tot+' équipement(s) à gérer — '+e.length+' EPI, '+c.length+' corde(s)' : 'Aucune alerte. Tous les équipements sont à jour ✔';
+  const parts=[];
+  if(SE.perimes!==undefined&&SE.perimes!=='') parts.push(SE.perimes+' EPI périmés'+(num(SE.sous2ans)?' + '+SE.sous2ans+' à renouveler sous 2 ans':''));
+  if(Object.keys(st).length) parts.push(num(st['RÉFORMÉE'])+num(st['RÉFORMÉE CRITIQUE'])+' corde(s) à retirer, '+num(st['À SURVEILLER'])+' à surveiller');
+  $('#herosum').textContent = tot ? 'Synthèse officielle — '+(parts.join(' · ')||tot+' équipement(s) à gérer') : 'Aucune alerte. Tous les équipements sont à jour ✔';
+  renderSynthese(SE, TC);
 
   document.querySelectorAll('.tile').forEach(t=>t.classList.toggle('on', t.dataset.f===homeFilter));
   let list=[], title='À gérer';
@@ -384,6 +412,38 @@ function renderHome(){
       <span class="chip ${a.s==='red'?'red':'amb'}">${a.fam}</span></div>`).join('')
     : '<div class="empty">Rien à gérer dans cette catégorie ✔</div>';
   window._homeList = list;
+}
+function renderSynthese(SE, TC){
+  const el = $('#synthese'); if(!el) return;
+  let html = '';
+  if(SE && SE.detail && SE.detail.length){
+    html += `<div style="font:600 .95rem 'Barlow Condensed';text-transform:uppercase;margin-bottom:6px">🦺 EPI — feuille SYNTHESE${SE.situation?` <span style="color:var(--mut);font-weight:400;text-transform:none">(situation au ${esc(SE.situation)})</span>`:''}</div>`;
+    html += `<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;margin-bottom:8px">
+      <span><b>${esc(SE.specialistes)}</b> spécialistes</span><span><b>${esc(SE.suivis)}</b> EPI suivis</span>
+      <span class="chip red">${esc(SE.perimes)} périmés</span><span class="chip amb">${esc(SE.sous2ans)} ≤ 2 ans</span>
+      <span class="chip gry">${esc(SE.reformes)} réformés</span></div>`;
+    html += `<table style="width:100%;border-collapse:collapse;font-size:.83rem;margin-bottom:12px">
+      <tr style="color:var(--mut);text-align:left"><th style="padding:4px 0">Équipement</th><th>Suivis</th><th>Périmés</th><th>≤ 2 ans</th><th>Proch. échéance</th></tr>`+
+      SE.detail.map(d=>`<tr style="border-top:1px solid var(--line)">
+        <td style="padding:5px 0"><b>${esc(d.equipement)}</b></td><td>${esc(d.suivis)}</td>
+        <td>${num(d.perimes)?`<span class="chip red">${esc(d.perimes)}</span>`:'0'}</td>
+        <td>${num(d.sous2ans)?`<span class="chip amb">${esc(d.sous2ans)}</span>`:'0'}</td>
+        <td>${esc(d.echeance)}</td></tr>`).join('')+`</table>`;
+  }
+  if(TC && (Object.keys(TC.statuts||{}).length || TC.duree)){
+    html += `<div style="font:600 .95rem 'Barlow Condensed';text-transform:uppercase;margin:4px 0 6px">🧗 Cordes — tableau de bord${TC.duree?` <span style="color:var(--mut);font-weight:400;text-transform:none">(réforme ${esc(TC.duree)} ans · seuil critique ${esc(TC.seuil)} ans)</span>`:''}</div>`;
+    const st=TC.statuts||{};
+    html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      ${st['EN SERVICE']!==undefined?`<span class="chip grn">${esc(st['EN SERVICE'])} en service</span>`:''}
+      ${st['À SURVEILLER']!==undefined?`<span class="chip amb">${esc(st['À SURVEILLER'])} à surveiller</span>`:''}
+      ${st['RÉFORMÉE']!==undefined?`<span class="chip red">${esc(st['RÉFORMÉE'])} réformées</span>`:''}
+      ${st['RÉFORMÉE CRITIQUE']!==undefined?`<span class="chip red">⚠ ${esc(st['RÉFORMÉE CRITIQUE'])} critiques</span>`:''}</div>`;
+    const cat=TC.categories||{}, L=TC.longueurs||{};
+    const catTxt = Object.keys(cat).map(k=>`${cat[k]} ${k.toLowerCase()}`).join(' · ');
+    html += `<div style="font-size:.85rem;color:var(--mut)">${catTxt?catTxt+'<br>':''}
+      ${L.total?`Longueur totale : <b>${esc(L.total)} m</b>`:''}${L.statique?` — statiques ${esc(L.statique)} m`:''}${L.dynamique?` · dynamiques ${esc(L.dynamique)} m`:''}</div>`;
+  }
+  el.innerHTML = html || '<div class="empty">Synthèses non disponibles (mettre à jour le Code.gs en V3.3).</div>';
 }
 function openAlert(i){
   const a = window._homeList[i]; if(!a) return;
