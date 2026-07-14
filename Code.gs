@@ -40,22 +40,43 @@ var FICHE_MAP = [
 /* ================= LECTURE ================= */
 
 function doGet(e) {
-  try {
-    return json_({
-      ok: true,
-      epi:        readEpi_(),
-      cordes:     readCordes_(),
-      agents:     readAgents_(),
-      inventaire: readInventaire_(),
-      reformes:   readReformes_(),
-      ts: new Date().toISOString()
-    });
-  } catch (err) { return json_({ ok: false, error: String(err) }); }
+  var out = { ok: true, ts: new Date().toISOString(), warnings: [] };
+  var parts = { epi: readEpi_, cordes: readCordes_, agents: readAgents_, inventaire: readInventaire_, reformes: readReformes_ };
+  Object.keys(parts).forEach(function(k) {
+    try { out[k] = parts[k](); }
+    catch (err) {
+      out[k] = { headers: [], rows: [] };
+      out.warnings.push(k.toUpperCase() + ' : ' + String(err));
+    }
+  });
+  if (out.warnings.length === 5) return json_({ ok: false, error: out.warnings.join(' — ') });
+  return json_(out);
 }
 
 function ssEpi_()    { return SpreadsheetApp.openById(CONFIG.EPI_ID); }
 function ssCordes_() { return SpreadsheetApp.openById(CONFIG.CORDES_ID); }
 function ssInv_()    { return SpreadsheetApp.openById(CONFIG.INV_ID); }
+
+// Retrouve une feuille même si son nom diffère légèrement
+// (espaces, accents, majuscules). Sinon, erreur explicite listant les feuilles.
+function norm_(s) {
+  return String(s || '').toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ').trim();
+}
+function getSheetSmart_(ss, name) {
+  var sh = ss.getSheetByName(name);
+  if (sh) return sh;
+  var target = norm_(name);
+  var sheets = ss.getSheets();
+  for (var i = 0; i < sheets.length; i++)
+    if (norm_(sheets[i].getName()) === target) return sheets[i];
+  for (var j = 0; j < sheets.length; j++)
+    if (norm_(sheets[j].getName()).indexOf(target) >= 0 || target.indexOf(norm_(sheets[j].getName())) >= 0)
+      return sheets[j];
+  throw new Error('Feuille "' + name + '" introuvable. Feuilles disponibles : ' +
+    sheets.map(function(x){ return x.getName(); }).join(' | '));
+}
 
 function clean_(v) {
   var s = String(v == null ? '' : v).trim();
@@ -64,7 +85,7 @@ function clean_(v) {
 }
 
 function readEpi_() {
-  var sh = ssEpi_().getSheetByName(EPI_SHEET);
+  var sh = getSheetSmart_(ssEpi_(), EPI_SHEET);
   var vals = sh.getDataRange().getDisplayValues();
   var headers = vals[0].map(clean_).slice(0, 19);
   var rows = [];
@@ -89,7 +110,7 @@ function recapHeaderRow_(sh) {
 }
 
 function readCordes_() {
-  var sh = ssCordes_().getSheetByName(RECAP);
+  var sh = getSheetSmart_(ssCordes_(), RECAP);
   var hr = recapHeaderRow_(sh);
   var vals = sh.getDataRange().getDisplayValues();
   var rows = [];
@@ -198,7 +219,7 @@ function doPost(e) {
 // Écrit la ligne du tableau général PUIS synchronise la fiche individuelle
 // de l'agent (seules les valeurs changent, la mise en forme reste intacte).
 function updateEpi_(row, values) {
-  var sh = ssEpi_().getSheetByName(EPI_SHEET);
+  var sh = getSheetSmart_(ssEpi_(), EPI_SHEET);
   sh.getRange(row, 1, 1, values.length).setValues([values]);
   syncFiche_(values);
 }
@@ -211,7 +232,7 @@ function reformerEpi_(row, values, reforme) {
 
 function syncFiche_(values) {
   var ss = ssEpi_();
-  var headers = ss.getSheetByName(EPI_SHEET).getRange(1, 1, 1, 19).getDisplayValues()[0].map(clean_);
+  var headers = getSheetSmart_(ss, EPI_SHEET).getRange(1, 1, 1, 19).getDisplayValues()[0].map(clean_);
   var get = function(col) { var i = headers.indexOf(col); return i < 0 ? '' : clean_(values[i]); };
   var nom = get('NOM').toUpperCase(), prenom = get('PRENOM');
   if (!nom) return;
@@ -264,12 +285,12 @@ function updateAgent_(nom, prenom, info) {
 // par formules depuis RECAP : on n'écrit JAMAIS dedans (les formules feraient
 // la mise à jour toutes seules). Seul RECAP est modifié.
 function updateCorde_(row, values) {
-  var sh = ssCordes_().getSheetByName(RECAP);
+  var sh = getSheetSmart_(ssCordes_(), RECAP);
   sh.getRange(row, 1, 1, values.length).setValues([values]);
 }
 
 function addCorde_(values) {
-  var sh = ssCordes_().getSheetByName(RECAP);
+  var sh = getSheetSmart_(ssCordes_(), RECAP);
   var hr = recapHeaderRow_(sh);
   var vals = sh.getDataRange().getDisplayValues();
   var target = hr; // dernière ligne non vide
@@ -283,7 +304,7 @@ function addCorde_(values) {
 // archivage dans REFORMES. L'application masque les cordes réformées.
 function reformerCorde_(row, reforme) {
   var ss = ssCordes_();
-  var sh = ss.getSheetByName(RECAP);
+  var sh = getSheetSmart_(ss, RECAP);
   var iStatut = CORDES_HEADERS.indexOf('STATUT') + 1;   // colonne J
   sh.getRange(row, iStatut).setValue('RÉFORMÉE');
   var v = sh.getRange(row, 1, 1, 11).getDisplayValues()[0].map(clean_);
