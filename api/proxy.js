@@ -1,5 +1,5 @@
 // Proxy Vercel -> Apps Script : élimine tout problème CORS.
-const TARGET = "https://script.google.com/macros/s/AKfycbwbp9a6MHeqxov1xNiMhIxW4z3FzAjdHJZGpbxlyxz8JFjqQDHcbFDV_oX8LE21M2FFTQ/exec";
+const TARGET = "https://script.google.com/macros/s/AKfycbyqAtLmrKJPvJrhaXmp-uTrfsG_9_uKsMUvKNQ57vx66YWm610YLT3Jhi8P8BX2PVXW/exec";
 
 export default async function handler(req, res) {
   try {
