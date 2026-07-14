@@ -1,12 +1,7 @@
 /* ============================================================
-   CONFIGURATION — À MODIFIER UNE SEULE FOIS (par l'administrateur)
-
-   Collez ici l'URL de votre application Web Apps Script
-   (Déployer → Application Web → URL se terminant par /exec).
-
-   Une fois cette URL renseignée, les utilisateurs n'ont RIEN à
-   configurer : ils ouvrent l'app et tout fonctionne.
+   CONFIGURATION — URL du backend Apps Script (déjà renseignée)
+   Les utilisateurs n'ont RIEN à configurer.
 ============================================================ */
 window.SMPM_CONFIG = {
-  API_URL: ""   // ← coller l'URL ici, entre les guillemets
+  API_URL: "https://script.google.com/macros/s/AKfycbwbp9a6MHeqxov1xNiMhIxW4z3FzAjdHJZGpbxlyxz8JFjqQDHcbFDV_oX8LE21M2FFTQ/exec"
 };
