@@ -644,11 +644,12 @@ function showFiche(){
         <div><b>Fonction</b><br>${esc(a.FONCTION||'—')}</div><div><b>Grade</b><br>${esc(a.GRADE||'—')}</div>
         <div><b>Centre</b><br>${esc(a.CENTRE||'—')}</div><div><b>Équipe</b><br>${esc(a.EQUIPE||'—')}</div>
         <div><b>Téléphone</b><br>${a.TEL?`<a href="tel:${esc(a.TEL)}">${esc(a.TEL)}</a>`:'—'}</div>
-        <div><b>Mail</b><br>${a.MAIL?`<a href="mailto:${esc(a.MAIL)}">${esc(a.MAIL)}</a>`:'—'}</div></div></div>
+        <div><b>Mail</b><br>${a.MAIL?`<a href="mailto:${esc(a.MAIL)}">${esc(a.MAIL)}</a>`:'—'}</div>
+        <div><b>Matricule</b><br>${esc(a.MATRICULE||'—')}</div></div></div>
     <button class="btn ghost" style="width:100%" onclick="editAgent()">Modifier la fiche</button>`;
   window._curAgent = a;
 }
-const AGENT_FIELDS = [['FONCTION','Fonction'],['GRADE','Grade'],['CENTRE','Centre'],['EQUIPE','Équipe'],['TEL','Téléphone'],['MAIL','Mail']];
+const AGENT_FIELDS = [['FONCTION','Fonction'],['GRADE','Grade'],['CENTRE','Centre'],['EQUIPE','Équipe'],['TEL','Téléphone'],['MAIL','Mail'],['MATRICULE','Matricule']];
 function editAgent(){
   const a = window._curAgent; if(!a) return;
   openSheet(`<h3>${esc(a.NOM)} ${esc(a.PRENOM)}</h3>
