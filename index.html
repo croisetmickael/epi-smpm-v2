@@ -811,11 +811,42 @@ function openSheet(html){ $('#sheetbox').innerHTML=html; $('#ovl').classList.add
 function closeSheet(){ $('#ovl').classList.remove('show'); }
 $('#ovl').addEventListener('click', e=>{ if(e.target.id==='ovl') closeSheet(); });
 
+function applyLocal(body){   // applique la modification localement (affichage immédiat)
+  try{
+    if(body.action==='updateEpi'){
+      const r = DB.epi.rows.find(x=>x.row===body.row); if(r) r.values = body.values.slice();
+    } else if(body.action==='updateCorde'){
+      const r = DB.cordes.rows.find(x=>x.row===body.row); if(r) r.values = body.values.slice();
+    } else if(body.action==='updateInv'){
+      const r = DB.inventaire.rows.find(x=>x.row===body.row && x.values[0]===body.emplacement);
+      if(r){ r.values[1]=body.article; r.values[2]=body.quantite; }
+    } else if(body.action==='updateAgent'){
+      const r = DB.agents.rows.find(x=>x.values[0]===body.nom && x.values[1]===body.prenom);
+      if(r) DB.agents.headers.forEach((hd,i)=>{ if(body.info[hd]!==undefined) r.values[i]=body.info[hd]; });
+    } else return false;   // ajout / réforme : structure modifiée → rechargement complet
+    return true;
+  }catch(e){ return false; }
+}
+function renderAll(){ renderHome(); renderEpi(); renderCordes(); renderPerso(); renderInv(); }
+function saveSnapshot(){ try{ localStorage.setItem('smpm_db', JSON.stringify(DB)); }catch(e){} }
+function loadSnapshot(){ try{ const s=localStorage.getItem('smpm_db'); return s?JSON.parse(s):null; }catch(e){ return null; } }
 async function write(body, okMsg){
-  try{ syncState(''); toast('Enregistrement…');
-    await api.post(body); closeSheet(); toast(okMsg);
-    await load(true);
-  }catch(err){ syncState('err'); toast('Erreur : '+err.message); }
+  if(applyLocal(body)){
+    // Modification simple : affichage IMMÉDIAT, envoi vers Google en arrière-plan
+    closeSheet(); renderAll(); saveSnapshot(); toast(okMsg); syncState('');
+    api.post(body)
+      .then(()=>{ syncState('ok'); load(true, true); })
+      .catch(err=>{ syncState('err');
+        toast('⚠ Échec d\'enregistrement — vérifiez la connexion ('+err.message+')');
+        load(true, true);                 // recharge pour revenir à l'état réel du Sheet
+      });
+  } else {
+    // Ajout / réforme : on attend l'écriture, puis recharge silencieuse non bloquante
+    try{ syncState(''); toast('Enregistrement…');
+      await api.post(body); closeSheet(); toast(okMsg);
+      load(true, true);
+    }catch(err){ syncState('err'); toast('Erreur : '+err.message); }
+  }
 }
 
 function show(page){
@@ -837,24 +868,31 @@ $('#btnsave').addEventListener('click', ()=>{
   localStorage.setItem('smpm_api', u); load(true);
 });
 
-async function load(force){
+async function load(force, silent){
   if(!api.url()){ show('setup'); return; }
   try{
-    syncState(''); if(force) toast('Synchronisation avec le Google Sheet…');
+    syncState(''); if(force && !silent) toast('Synchronisation…');
     DB = await api.load();
-    syncState('ok');
+    syncState('ok'); saveSnapshot();
     if(DB.warnings && DB.warnings.length){ toast('⚠ ' + DB.warnings[0]); console.warn(DB.warnings); }
-    renderHome(); renderEpi(); renderCordes(); renderPerso(); renderInv();
+    renderAll();
     if(document.querySelector('.page.on')?.id==='setup') show('p-accueil');
-    if(force) toast('Données à jour ✔');
+    if(force && !silent) toast('Données à jour ✔');
   }catch(err){
     syncState('err');
-    $('#alertlist').innerHTML = '<div class="empty">Connexion impossible.<br>Vérifiez l\'URL Apps Script dans ⚙ Réglages.<br><small>'+esc(err.message)+'</small></div>';
-    toast('Erreur de connexion au Sheet');
+    if(!DB) $('#alertlist').innerHTML = '<div class="empty">Connexion impossible.<br>Vérifiez l\'URL Apps Script dans ⚙ Réglages.<br><small>'+esc(err.message)+'</small></div>';
+    if(!silent) toast('Erreur de connexion au Sheet');
   }
 }
 if(FIXED_API){ $('#btnsettings').style.display='none'; }
-load();
+// Démarrage : snapshot local affiché INSTANTANÉMENT, puis rafraîchissement en arrière-plan
+const snap = loadSnapshot();
+if(snap && snap.epi && api.url()){
+  DB = snap; renderAll(); syncState('');
+  load(false, true);
+} else {
+  load();
+}
 </script>
 </body>
 </html>
