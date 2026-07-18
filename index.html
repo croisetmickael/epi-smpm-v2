@@ -78,7 +78,7 @@ label{font-size:.74rem;font-weight:600;color:var(--mut);text-transform:uppercase
   .qrmodal-card button:active{opacity:.8}
 
 /* ---- Accueil ---- */
-.hero{background:linear-gradient(160deg,var(--navy),var(--navy2));border-radius:var(--r);color:#fff;
+.hero{background:linear-gradient(160deg,var(--red),#A01820);border-radius:var(--r);color:#fff;
   padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
 .hero h2{font-size:1.15rem;text-transform:uppercase;margin-bottom:2px}
 .hero p{color:#B9C2D6;font-size:.85rem}
@@ -210,8 +210,12 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
       <button class="tile" data-f="REF"><span class="ic">📦</span><div class="n" id="n-ref">–</div><div class="l">Réformés</div></button>
       <button class="tile" data-f="ALL"><span class="ic">🗂</span><div class="n" id="n-all">–</div><div class="l">Tout afficher</div></button>
     </div>
-    <div class="sect" id="alerttitle">À gérer</div>
-    <div class="card" id="alertlist"><div class="loader"><div class="spin"></div>Chargement…</div></div>
+    <button class="card" onclick="toggleAlerts()" style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;border:none;background:linear-gradient(160deg,var(--navy),var(--navy2));color:#fff;padding:14px;width:100%;text-align:center;margin-bottom:0">
+      <span style="font-size:1.4rem">📋</span>
+      <b style="flex:1;font:700 1.05rem 'Barlow Condensed';text-transform:uppercase;letter-spacing:.03em" id="alertbtn">À gérer</b>
+      <span style="font-size:1.1rem;color:#B9C2D6" id="alertarrow">▼</span>
+    </button>
+    <div class="card" id="alertlist" style="background:#E8F0FF"><div class="loader"><div class="spin"></div>Chargement…</div></div>
     <div class="sect">Synthèse officielle</div>
     <div class="card" id="synthese"><div class="empty">Chargement de la synthèse…</div></div>
   </section>
@@ -839,6 +843,14 @@ attachSuggest('q-cordes','cordes', o=>{ cordeFilter='TOUTES'; renderCordes(); if
 attachSuggest('q-inv','inv', o=>{ renderInv(); });
 function openQRModal(){ document.getElementById('qrmodal').classList.remove('hidden'); }
 function closeQRModal(){ document.getElementById('qrmodal').classList.add('hidden'); }
+var alertsOpen = true;
+function toggleAlerts(){
+  const list = document.getElementById('alertlist');
+  const arrow = document.getElementById('alertarrow');
+  alertsOpen = !alertsOpen;
+  list.style.display = alertsOpen ? 'block' : 'none';
+  arrow.textContent = alertsOpen ? '▼' : '▶';
+}
 
 /* ---------------- Modale / navigation / chargement ---------------- */
 function openSheet(html){ $('#sheetbox').innerHTML=html; $('#ovl').classList.add('show'); }
