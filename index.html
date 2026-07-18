@@ -443,14 +443,14 @@ function renderHome(){
   if(homeFilter==='EPI'){ list=e; title='Alertes EPI'; }
   else if(homeFilter==='CORDE'){ list=c; title='Alertes cordes'; }
   else if(homeFilter==='REF'){ title='Équipements réformés';
-    $('#alerttitle').textContent=title;
+    $('#alertbtn').textContent=title;
     $('#alertlist').innerHTML = ref.length ? ref.slice().reverse().map(r=>
       `<div class="alrow"><span class="dot gry"></span><div class="tx"><b>${esc(r.TYPE)} ${esc(r['NUM SERIE'])}</b>
        <small>${esc(r.FAMILLE)} · ${esc(r.SPECIALISTE||'')} · ${esc(r.REFORME||'')} ${esc(r.CAUSE?('· '+r.CAUSE):'')}</small></div></div>`).join('')
       : '<div class="empty">Aucun équipement réformé.</div>';
     return;
   } else { list=[...e,...c].sort((x,y)=> x.s===y.s?0 : x.s==='red'?-1:1); }
-  $('#alerttitle').textContent=title;
+  $('#alertbtn').textContent=title;
   $('#alertlist').innerHTML = list.length ? list.map((a,i)=>
     `<div class="alrow" style="cursor:pointer" onclick="openAlert(${i},'${homeFilter}')">
       <span class="dot ${a.s}"></span>
