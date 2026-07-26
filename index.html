@@ -166,13 +166,7 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
   <!-- ================= RÉGLAGES / PREMIER LANCEMENT ================= -->
   <section class="page" id="setup">
     <div class="card">
-      <h2 class="disp" style="font-size:1.3rem;text-transform:uppercase">Connexion au Google Sheet</h2>
-      <p style="color:var(--mut);font-size:.9rem;margin:6px 0 4px">
-        Collez l'URL de votre application Web Apps Script (terminant par <b>/exec</b>).
-        Toutes les données sont lues et écrites directement dans le Google Sheet.</p>
-      <label>URL Apps Script</label>
-      <input id="apiurl" placeholder="https://script.google.com/macros/s/…/exec" inputmode="url" autocapitalize="off">
-      <div class="actions"><button class="btn red" id="btnsave">Enregistrer et charger</button></div>
+      
     </div>
   </section>
 
@@ -442,11 +436,8 @@ function renderHome(){
   const parts=[];
   if(SE.perimes!==undefined&&SE.perimes!=='') parts.push(SE.perimes+' EPI périmés'+(num(SE.sous2ans)?' + '+SE.sous2ans+' à renouveler sous 2 ans':''));
   if(Object.keys(st).length) parts.push(num(st['RÉFORMÉE'])+num(st['RÉFORMÉE CRITIQUE'])+' corde(s) à retirer, '+num(st['À SURVEILLER'])+' à surveiller');
-  $('#herosum').textContent = tot ? 'Synthèse officielle — '+(parts.join(' · ')||tot+' équipement(s) à gérer') : 'Aucune alerte. Tous les équipements sont à jour ✔';
+  const herosum = $('#herosum'); if(herosum) herosum.textContent = tot ? 'Synthèse officielle — '+(parts.join(' · ')||tot+' équipement(s) à gérer') : 'Aucune alerte. Tous les équipements sont à jour ✔';
   renderSynthese(SE, TC);
-  
-  // Afficher la présence
-  renderPresence();
   const e = epiAlerts(), c = cordeAlerts(), ref = objs(DB.reformes);
 
   document.querySelectorAll('.tile').forEach(t=>t.classList.toggle('on', t.dataset.f===homeFilter));
