@@ -428,7 +428,7 @@ function renderHome(){
   if(t2) t2.classList.toggle('alert', num(st['RÉFORMÉE'])+num(st['RÉFORMÉE CRITIQUE'])>0);
   const tot = nEpi + nCorde;
   const b = $('#bdg'); if(b) { b.hidden = !tot; b.textContent = tot; }
-  $('#herodate').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  ($('#herodate')||{textContent:0}).textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   const parts=[];
   if(SE.perimes!==undefined&&SE.perimes!=='') parts.push(SE.perimes+' EPI périmés'+(num(SE.sous2ans)?' + '+SE.sous2ans+' à renouveler sous 2 ans':''));
   if(Object.keys(st).length) parts.push(num(st['RÉFORMÉE'])+num(st['RÉFORMÉE CRITIQUE'])+' corde(s) à retirer, '+num(st['À SURVEILLER'])+' à surveiller');
@@ -442,14 +442,14 @@ function renderHome(){
   else if(homeFilter==='CORDE'){ list=c; title='Alertes cordes'; }
   else if(homeFilter==='REF'){ title='Équipements réformés';
     $('#alertbtn').textContent=title;
-    $('#alertlist').innerHTML = ref.length ? ref.slice().reverse().map(r=>
+    ($('#alertlist')||{innerHTML:0}).innerHTML = ref.length ? ref.slice().reverse().map(r=>
       `<div class="alrow"><span class="dot gry"></span><div class="tx"><b>${esc(r.TYPE)} ${esc(r['NUM SERIE'])}</b>
        <small>${esc(r.FAMILLE)} · ${esc(r.SPECIALISTE||'')} · ${esc(r.REFORME||'')} ${esc(r.CAUSE?('· '+r.CAUSE):'')}</small></div></div>`).join('')
       : '<div class="empty">Aucun équipement réformé.</div>';
     return;
   } else { list=[...e,...c].sort((x,y)=> x.s===y.s?0 : x.s==='red'?-1:1); }
   $('#alertbtn').textContent=title;
-  $('#alertlist').innerHTML = list.length ? list.map((a,i)=>
+  ($('#alertlist')||{innerHTML:0}).innerHTML = list.length ? list.map((a,i)=>
     `<div class="alrow" style="cursor:pointer" onclick="openAlert(${i},'${homeFilter}')">
       <span class="dot ${a.s}"></span>
       <div class="tx"><b>${esc(a.who)}</b><small>${esc(a.what)} · ${esc(a.info)}</small></div>
@@ -919,7 +919,7 @@ async function load(force, silent){
     if(force && !silent) toast('Données à jour ✔');
   }catch(err){
     syncState('err');
-    if(!DB) $('#alertlist').innerHTML = '<div class="empty">Connexion impossible.<br>Vérifiez l\'URL Apps Script dans ⚙ Réglages.<br><small>'+esc(err.message)+'</small></div>';
+    if(!DB) ($('#alertlist')||{innerHTML:0}).innerHTML = '<div class="empty">Connexion impossible.<br>Vérifiez l\'URL Apps Script dans ⚙ Réglages.<br><small>'+esc(err.message)+'</small></div>';
     if(!silent) toast('Erreur de connexion au Sheet');
   }
 }
