@@ -891,14 +891,17 @@ function show(page){
 }
 document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>show(b.dataset.p)));
 document.querySelectorAll('.tile').forEach(t=>t.addEventListener('click',()=>{ homeFilter=t.dataset.f; renderHome(); }));
-$('#q-epi').addEventListener('input', renderEpi);
-$('#q-cordes').addEventListener('input', renderCordes);
-$('#q-inv').addEventListener('input', renderInv);
-$('#selperso').addEventListener('change', showFiche);
+const qepi=$('#q-epi'); if(qepi) qepi.addEventListener('input', renderEpi);
+const qcordes=$('#q-cordes'); if(qcordes) qcordes.addEventListener('input', renderCordes);
+const qinv=$('#q-inv'); if(qinv) qinv.addEventListener('input', renderInv);
+const selperso=$('#selperso'); if(selperso) selperso.addEventListener('change', showFiche);
 $('#btnaddcorde').addEventListener('click', addCorde);
-$('#btnrefresh').addEventListener('click', ()=>load(true));
-$('#btnsettings').addEventListener('click', ()=>{ $('#apiurl').value=api.url(); show('setup'); });
-$('#btnsave').addEventListener('click', ()=>{
+const btnrefresh = $('#btnrefresh');
+if(btnrefresh) btnrefresh.addEventListener('click', ()=>load(true));
+const btnsettings = $('#btnsettings');
+if(btnsettings) btnsettings.addEventListener('click', ()=>{ const apiurl=$('#apiurl'); if(apiurl) apiurl.value=api.url(); show('setup'); });
+const btnsave = $('#btnsave');
+if(btnsave) btnsave.addEventListener('click', ()=>{
   const u=$('#apiurl').value.trim();
   if(!/^https:\/\/script\.google\.com\/.+\/exec/.test(u)){ toast('URL invalide — elle doit finir par /exec'); return; }
   localStorage.setItem('smpm_api', u); load(true);
