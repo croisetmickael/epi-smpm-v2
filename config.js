@@ -1,9 +1,12 @@
 /* ============================================================
-   CONFIGURATION
-   /api/proxy = fonction Vercel qui relaie vers Apps Script
-   (l'URL Apps Script est dans api/proxy.js) — aucun souci CORS,
-   et rien à configurer pour les utilisateurs.
+   CONFIGURATION — À MODIFIER UNE SEULE FOIS (par l'administrateur)
+
+   Collez ici l'URL de votre application Web Apps Script
+   (Déployer → Application Web → URL se terminant par /exec).
+
+   Une fois cette URL renseignée, les utilisateurs n'ont RIEN à
+   configurer : ils ouvrent l'app et tout fonctionne.
 ============================================================ */
 window.SMPM_CONFIG = {
-  API_URL: "/api/proxy"
+  API_URL: ""   // ← coller l'URL ici, entre les guillemets
 };
