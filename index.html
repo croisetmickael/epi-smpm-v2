@@ -178,7 +178,7 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
 
   <!-- ================= ACCUEIL ================= -->
   <section class="page" id="p-accueil">
-    <div class="hero"><h2 id="herodate"></h2><p id="herosum"></p></div>
+    <div class="card" id="list-accueil" style="background:#F8F9FC;min-height:200px"><div class="loader"><div class="spin"></div>Chargement de la présence…</div></div>
 
     <button class="card" onclick="openQRModal()" style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;border:none;background:linear-gradient(160deg,#E8F0FF,#F0F7FF);padding:16px;width:100%;text-align:center;margin-bottom:10px">
       <span style="font-size:1.8rem">📱</span>
@@ -209,12 +209,12 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
       <button class="tile" data-f="REF"><span class="ic">📦</span><div class="n" id="n-ref">–</div><div class="l">Réformés</div></button>
       <button class="tile" data-f="ALL"><span class="ic">🗂</span><div class="n" id="n-all">–</div><div class="l">Tout afficher</div></button>
     </div>
-    <button class="card" onclick="toggleAlerts()" style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;border:none;background:linear-gradient(160deg,var(--navy),var(--navy2));color:#fff;padding:14px;width:100%;text-align:center;margin-bottom:0">
-      <span style="font-size:1.4rem">📋</span>
-      <b style="flex:1;font:700 1.05rem 'Barlow Condensed';text-transform:uppercase;letter-spacing:.03em" id="alertbtn">À gérer</b>
-      <span style="font-size:1.1rem;color:#B9C2D6" id="alertarrow">▼</span>
+    <button class="card" onclick="togglePresence()" style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;border:none;background:linear-gradient(160deg,var(--navy),var(--navy2));color:#fff;padding:14px;width:100%;text-align:center;margin-bottom:0">
+      <span style="font-size:1.4rem">👥</span>
+      <b style="flex:1;font:700 1.05rem 'Barlow Condensed';text-transform:uppercase;letter-spacing:.03em" id="presencebtn">Présence</b>
+      <span style="font-size:1.1rem;color:#B9C2D6" id="presencearrow">▼</span>
     </button>
-    <div class="card" id="alertlist" style="background:#E8F0FF"><div class="loader"><div class="spin"></div>Chargement…</div></div>
+    <div class="card" id="presencelist" style="background:#F8F9FC"><div class="loader"><div class="spin"></div>Chargement de la présence…</div></div>
     <div class="sect">Synthèse officielle</div>
     <div class="card" id="synthese"><div class="empty">Chargement de la synthèse…</div></div>
   </section>
@@ -414,20 +414,19 @@ function cordeAlerts(){
 /* ---------------- Rendu ACCUEIL ---------------- */
 function num(x){ const n=parseInt(String(x||'').replace(/\D/g,'')); return isNaN(n)?0:n; }
 function renderHome(){
-  const e = epiAlerts(), c = cordeAlerts(), ref = objs(DB.reformes);
-  const D = DB.dashboards || {};
-  const SE = D.epi || {}, TC = D.cordes || {};
-  // Chiffres OFFICIELS : feuille SYNTHESE (EPI) et TABLEAU DE BORD (cordes)
-  const nEpi = (SE.perimes!==undefined && SE.perimes!=='') ? num(SE.perimes)+num(SE.sous2ans) : e.length;
+  // Afficher la synthèse officielle
+  const Dashboard = DB.dashboards || {};
+  const SE = Dashboard.epi || {}, TC = Dashboard.cordes || {};
+  const nEpi = (SE.perimes!==undefined && SE.perimes!=='') ? num(SE.perimes)+num(SE.sous2ans) : 0;
   const st = TC.statuts || {};
   const nCorde = Object.keys(st).length
     ? num(st['À SURVEILLER'])+num(st['RÉFORMÉE'])+num(st['RÉFORMÉE CRITIQUE'])
-    : c.length;
-  const nRef = (SE.reformes!==undefined && SE.reformes!=='') ? num(SE.reformes) + ref.filter(r=>r.FAMILLE==='CORDE').length : ref.length;
+    : 0;
+  const nRef = (SE.reformes!==undefined && SE.reformes!=='') ? num(SE.reformes) + objs(DB.reformes || {}).filter(r=>r.FAMILLE==='CORDE').length : 0;
   $('#n-epi').textContent = nEpi; $('#n-corde').textContent = nCorde;
   $('#n-ref').textContent = nRef; $('#n-all').textContent = nEpi + nCorde;
-  document.querySelector('[data-f="EPI"]').classList.toggle('alert', num(SE.perimes)>0 || e.some(a=>a.s==='red'));
-  document.querySelector('[data-f="CORDE"]').classList.toggle('alert', num(st['RÉFORMÉE'])+num(st['RÉFORMÉE CRITIQUE'])>0 || c.some(a=>a.s==='red'));
+  document.querySelector('[data-f="EPI"]').classList.toggle('alert', num(SE.perimes)>0);
+  document.querySelector('[data-f="CORDE"]').classList.toggle('alert', num(st['RÉFORMÉE'])+num(st['RÉFORMÉE CRITIQUE'])>0);
   const tot = nEpi + nCorde;
   const b = $('#bdg'); b.hidden = !tot; b.textContent = tot;
   $('#herodate').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -436,6 +435,10 @@ function renderHome(){
   if(Object.keys(st).length) parts.push(num(st['RÉFORMÉE'])+num(st['RÉFORMÉE CRITIQUE'])+' corde(s) à retirer, '+num(st['À SURVEILLER'])+' à surveiller');
   $('#herosum').textContent = tot ? 'Synthèse officielle — '+(parts.join(' · ')||tot+' équipement(s) à gérer') : 'Aucune alerte. Tous les équipements sont à jour ✔';
   renderSynthese(SE, TC);
+  
+  // Afficher la présence
+  renderPresence();
+  const e = epiAlerts(), c = cordeAlerts(), ref = objs(DB.reformes);
 
   document.querySelectorAll('.tile').forEach(t=>t.classList.toggle('on', t.dataset.f===homeFilter));
   let list=[], title='À gérer';
@@ -842,13 +845,35 @@ attachSuggest('q-cordes','cordes', o=>{ cordeFilter='TOUTES'; renderCordes(); if
 attachSuggest('q-inv','inv', o=>{ renderInv(); });
 function openQRModal(){ document.getElementById('qrmodal').classList.remove('hidden'); }
 function closeQRModal(){ document.getElementById('qrmodal').classList.add('hidden'); }
-var alertsOpen = true;
-function toggleAlerts(){
-  const list = document.getElementById('alertlist');
-  const arrow = document.getElementById('alertarrow');
-  alertsOpen = !alertsOpen;
-  list.style.display = alertsOpen ? 'block' : 'none';
-  arrow.textContent = alertsOpen ? '▼' : '▶';
+var presenceOpen = true;
+function togglePresence(){
+  const list = document.getElementById('presencelist');
+  const arrow = document.getElementById('presencearrow');
+  presenceOpen = !presenceOpen;
+  list.style.display = presenceOpen ? 'block' : 'none';
+  arrow.textContent = presenceOpen ? '▼' : '▶';
+}
+function renderPresence(){
+  const P = DB.presence || {}; const rows = P.rows || [];
+  if(!rows.length) {
+    $('#presencelist').innerHTML = '<div class="empty">Aucune donnée de présence.</div>';
+    return;
+  }
+  const list = rows.map(r=>{
+    const nom = r.values[0], man = r.values[1]||0;
+    const pct = Math.round((man/7)*100); // 7 manœuvres = 100%
+    const col = pct <= 20 ? '#D8232A' : pct <= 50 ? '#E8930C' : pct <= 75 ? '#F5BC32' : '#1E8A4C';
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <b style="font-size:.95rem">${esc(nom)}</b>
+        <span style="font-size:.85rem;color:var(--mut)">${man} manœuvres · ${pct}%</span>
+      </div>
+      <div style="width:100%;height:12px;background:#F0F2F7;border-radius:6px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${col};transition:width .3s ease"></div>
+      </div>
+    </div>`;
+  }).join('');
+  $('#presencelist').innerHTML = list;
 }
 
 /* ---------------- Modale / navigation / chargement ---------------- */
@@ -939,5 +964,3 @@ if(snap && snap.epi && api.url()){
   load();
 }
 </script>
-</body>
-</html>
