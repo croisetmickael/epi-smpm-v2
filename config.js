@@ -1,12 +1,14 @@
 /* ============================================================
-   CONFIGURATION — À MODIFIER UNE SEULE FOIS (par l'administrateur)
-
-   Collez ici l'URL de votre application Web Apps Script
-   (Déployer → Application Web → URL se terminant par /exec).
-
-   Une fois cette URL renseignée, les utilisateurs n'ont RIEN à
-   configurer : ils ouvrent l'app et tout fonctionne.
+   CONFIGURATION
+   /api/proxy = fonction Vercel qui relaie vers Apps Script
+   (l'URL Apps Script est dans api/proxy.js) — aucun souci CORS,
+   et rien à configurer pour les utilisateurs.
+   
+   ⚠️ PRE-CONFIGURÉ : URL Apps Script définie dans api/proxy.js
+   Aucune saisie utilisateur requise.
 ============================================================ */
 window.SMPM_CONFIG = {
-  API_URL: ""   // ← coller l'URL ici, entre les guillemets
+  API_URL: "/api/proxy",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyqAtLmrKJPvJrhaXmp-uTrfsG_9_uKsMUvKNQ57vx66YWm610YLT3Jhi8P8BX2PVXW/exec",
+  CONFIGURED: true  // Flag pour éviter le formulaire de setup
 };
