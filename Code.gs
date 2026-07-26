@@ -50,7 +50,7 @@ function doGet(e) {
   if (hit) {
     return ContentService.createTextOutput(hit).setMimeType(ContentService.MimeType.JSON);
   }
-  var out = { ok: true, version: 'V3.8', ts: new Date().toISOString(), warnings: [] };
+  var out = { ok: true, version: 'V3.9', ts: new Date().toISOString(), warnings: [] };
   var parts = { epi: readEpi_, cordes: readCordes_, agents: readAgents_, inventaire: readInventaire_, reformes: readReformes_, dashboards: readDashboards_ };
   Object.keys(parts).forEach(function(k) {
     try { out[k] = parts[k](); }
