@@ -333,6 +333,20 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script>
+// Supprimer les erreurs vendor.js (extensions Chrome, etc)
+window.addEventListener('unhandledrejection', function(e) {
+  if (e.reason && String(e.reason).includes('No Listener')) {
+    e.preventDefault();
+  }
+});
+
+window.addEventListener('error', function(e) {
+  if (e.message && e.message.includes('No Listener')) {
+    e.preventDefault();
+    return true;
+  }
+});
+
 /* ============================================================
    EPI SMPM 80 — toutes les données transitent par Google Sheets
    via l'application Web Apps Script (Code.gs fourni).
