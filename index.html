@@ -215,22 +215,8 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
 </header>
 
 <main>
-  <!-- ================= RÉGLAGES / PREMIER LANCEMENT ================= -->
-  <section class="page" id="setup">
-    <div class="card">
-      <h2 class="disp" style="font-size:1.3rem;text-transform:uppercase">Connexion au Google Sheet</h2>
-      <p style="color:var(--mut);font-size:.9rem;margin:6px 0 4px">
-        Collez l'URL de votre application Web Apps Script (terminant par <b>/exec</b>).
-        Toutes les données sont lues et écrites directement dans le Google Sheet.</p>
-      <label>URL Apps Script</label>
-      <input id="apiurl" placeholder="https://script.google.com/macros/s/…/exec" inputmode="url" autocapitalize="off">
-      <div class="actions"><button class="btn red" id="btnsave">Enregistrer et charger</button></div>
-    </div>
-  </section>
-
   <!-- ================= ACCUEIL ================= -->
   <section class="page" id="p-accueil">
-    <div class="card" id="list-accueil" style="background:#F8F9FC;min-height:200px"><div class="loader"><div class="spin"></div>Chargement de la présence…</div></div>
 
     <button class="card" onclick="openQRModal()" style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;border:none;background:linear-gradient(160deg,#E8F0FF,#F0F7FF);padding:16px;width:100%;text-align:center;margin-bottom:10px">
       <span style="font-size:1.8rem">📱</span>
@@ -955,21 +941,15 @@ function show(page){
 }
 document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>show(b.dataset.p)));
 document.querySelectorAll('.tile').forEach(t=>t.addEventListener('click',()=>{ homeFilter=t.dataset.f; renderHome(); }));
-$('#q-epi').addEventListener('input', renderEpi);
-$('#q-cordes').addEventListener('input', renderCordes);
-$('#q-inv').addEventListener('input', renderInv);
-$('#selperso').addEventListener('change', showFiche);
-$('#btnaddcorde').addEventListener('click', addCorde);
-$('#btnrefresh').addEventListener('click', ()=>load(true));
-$('#btnsettings').addEventListener('click', ()=>{ $('#apiurl').value=api.url(); show('setup'); });
-$('#btnsave').addEventListener('click', ()=>{
-  const u=$('#apiurl').value.trim();
-  if(!/^https:\/\/script\.google\.com\/.+\/exec/.test(u)){ toast('URL invalide — elle doit finir par /exec'); return; }
-  localStorage.setItem('smpm_api', u); load(true);
-});
+{const el=$('#q-epi'); if(el) el.addEventListener('input', renderEpi);}
+{const el=$('#q-cordes'); if(el) el.addEventListener('input', renderCordes);}
+{const el=$('#q-inv'); if(el) el.addEventListener('input', renderInv);}
+{const el=$('#selperso'); if(el) el.addEventListener('change', showFiche);}
+{const el=$('#btnaddcorde'); if(el) el.addEventListener('click', addCorde);}
+{const el=$('#btnrefresh'); if(el) el.addEventListener('click', ()=>load(true));}
+{const el=$('#btnsettings'); if(el) el.style.display='none';}
 
 async function load(force, silent){
-  if(!api.url()){ show('setup'); return; }
   try{
     syncState(''); if(force && !silent) toast('Synchronisation…');
     DB = await api.load();
@@ -980,11 +960,10 @@ async function load(force, silent){
     if(force && !silent) toast('Données à jour ✔');
   }catch(err){
     syncState('err');
-    if(!DB) $('#alertlist').innerHTML = '<div class="empty">Connexion impossible.<br>Vérifiez l\'URL Apps Script dans ⚙ Réglages.<br><small>'+esc(err.message)+'</small></div>';
+    if(!DB) {const el=$('#alertlist'); if(el) el.innerHTML = '<div class="empty">Connexion impossible.<br><small>'+esc(err.message)+'</small></div>';}
     if(!silent) toast('Erreur de connexion au Sheet');
   }
 }
-if(FIXED_API){ $('#btnsettings').style.display='none'; }
 // Démarrage : snapshot local affiché INSTANTANÉMENT, puis rafraîchissement en arrière-plan
 const snap = loadSnapshot();
 if(snap && snap.epi && api.url()){
