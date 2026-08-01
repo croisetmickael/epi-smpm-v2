@@ -303,11 +303,13 @@ function loginCheck() {
   if (pwd === 'SMPM_CU') {
     localStorage.setItem('smpm_login_time', Date.now());
     document.getElementById('loginmodal').style.display = 'none';
-    console.log('✅ Login OK');
-    if (typeof load === 'function') load(true);
+    document.getElementById('app').style.display = 'block';
+    console.log('✅ Login réussi - recharge page');
+    setTimeout(function() { location.reload(); }, 500);
   } else {
-    alert('Code incorrect');
+    alert('❌ Code incorrect');
     document.getElementById('pwdinput').value = '';
+    document.getElementById('pwdinput').focus();
   }
 }
 
@@ -1007,11 +1009,13 @@ function loginCheck() {
   if (pwd === 'SMPM_CU') {
     localStorage.setItem('smpm_login_time', Date.now());
     document.getElementById('loginmodal').style.display = 'none';
-    console.log('✅ Login OK');
-    if (typeof load === 'function') load(true);
+    document.getElementById('app').style.display = 'block';
+    console.log('✅ Login réussi - recharge page');
+    setTimeout(function() { location.reload(); }, 500);
   } else {
-    alert('Code incorrect');
+    alert('❌ Code incorrect');
     document.getElementById('pwdinput').value = '';
+    document.getElementById('pwdinput').focus();
   }
 }
 
