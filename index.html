@@ -299,17 +299,18 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
 
 
 function loginCheck() {
-  var pwd = document.getElementById('pwdinput').value;
+  var pwd = (document.getElementById('pwdinput') || {}).value || '';
   if (pwd === 'SMPM_CU') {
     localStorage.setItem('smpm_login_time', Date.now());
-    document.getElementById('loginmodal').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    console.log('✅ Login réussi - recharge page');
-    setTimeout(function() { location.reload(); }, 500);
+    var m = document.getElementById('loginmodal');
+    if (m) m.style.display = 'none';
+    console.log('✅ Login réussi');
+    location.reload();
   } else {
     alert('❌ Code incorrect');
-    document.getElementById('pwdinput').value = '';
-    document.getElementById('pwdinput').focus();
+    var inp = document.getElementById('pwdinput');
+    if (inp) inp.value = '';
+    if (inp) inp.focus();
   }
 }
 
@@ -1005,17 +1006,18 @@ if(snap && snap.epi && api.url()){
 
 
 function loginCheck() {
-  var pwd = document.getElementById('pwdinput').value;
+  var pwd = (document.getElementById('pwdinput') || {}).value || '';
   if (pwd === 'SMPM_CU') {
     localStorage.setItem('smpm_login_time', Date.now());
-    document.getElementById('loginmodal').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    console.log('✅ Login réussi - recharge page');
-    setTimeout(function() { location.reload(); }, 500);
+    var m = document.getElementById('loginmodal');
+    if (m) m.style.display = 'none';
+    console.log('✅ Login réussi');
+    location.reload();
   } else {
     alert('❌ Code incorrect');
-    document.getElementById('pwdinput').value = '';
-    document.getElementById('pwdinput').focus();
+    var inp = document.getElementById('pwdinput');
+    if (inp) inp.value = '';
+    if (inp) inp.focus();
   }
 }
 
