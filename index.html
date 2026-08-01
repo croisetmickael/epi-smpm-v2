@@ -1,6 +1,33 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<script>
+window.addEventListener('unhandledrejection', function(event) {
+  if (event.reason && (String(event.reason).includes('No Listener') || String(event.reason).includes('tabs:outgoing'))) {
+    event.preventDefault();
+    return false;
+  }
+}, true);
+
+window.addEventListener('error', function(event) {
+  if (event.message && (event.message.includes('No Listener') || event.message.includes('tabs:outgoing'))) {
+    event.preventDefault();
+    return false;
+  }
+}, true);
+
+if (window.console) {
+  var originalError = console.error;
+  console.error = function() {
+    var args = Array.from(arguments);
+    if (args.some(a => String(a).includes('No Listener') || String(a).includes('tabs:outgoing'))) {
+      return;
+    }
+    originalError.apply(console, args);
+  };
+}
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>EPI SMPM 80</title>
