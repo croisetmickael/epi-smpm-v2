@@ -326,7 +326,14 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
 
 
 function loginCheck() {
-  var pwd = (document.getElementById('pwdinput') || {}).value || '';
+  var code = document.getElementById('pwdinput').value;
+  if (code == 'SMPM_CU') {
+    localStorage.setItem('smpm_login_time', Date.now());
+    location.reload();
+  } else {
+    alert('Code incorrect!');
+  }
+}).value || '';
   if (pwd === 'SMPM_CU') {
     localStorage.setItem('smpm_login_time', Date.now());
     var m = document.getElementById('loginmodal');
@@ -1047,7 +1054,14 @@ if(snap && snap.epi && api.url()){
 
 
 function loginCheck() {
-  var pwd = (document.getElementById('pwdinput') || {}).value || '';
+  var code = document.getElementById('pwdinput').value;
+  if (code == 'SMPM_CU') {
+    localStorage.setItem('smpm_login_time', Date.now());
+    location.reload();
+  } else {
+    alert('Code incorrect!');
+  }
+}).value || '';
   if (pwd === 'SMPM_CU') {
     localStorage.setItem('smpm_login_time', Date.now());
     var m = document.getElementById('loginmodal');
