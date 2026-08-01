@@ -292,106 +292,41 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
 
 <script src="config.js">
 // ============ LOGIN SYSTEM (24h) ============
-function loginCheck() {
-  const pwd = document.getElementById('pwdinput').value.trim();
-  if(pwd === 'SMPM_CU') {
-    localStorage.setItem('smpm_login_time', Date.now().toString());
-    document.getElementById('loginmodal').style.display = 'none';
-    document.getElementById('pwdinput').value = '';
-    console.log('✅ Login OK');
-  } else {
-    alert('❌ Code incorrect');
-    document.getElementById('pwdinput').value = '';
-    document.getElementById('pwdinput').focus();
-  }
-}
 
-function checkLogin() {
-  const loginTime = localStorage.getItem('smpm_login_time');
-  const now = Date.now();
-  const ttl24h = 24 * 60 * 60 * 1000;
-  
-  if(!loginTime || (now - parseInt(loginTime)) > ttl24h) {
-    document.getElementById('loginmodal').style.display = 'flex';
-    localStorage.removeItem('smpm_login_time');
-    document.getElementById('pwdinput').focus();
-  } else {
-    document.getElementById('loginmodal').style.display = 'none';
-  }
-}
-
-// Vérifier login au démarrage
-window.addEventListener('load', () => {
-  setTimeout(checkLogin, 100);
-  document.getElementById('pwdinput')?.focus();
-});
 
 
 // ============ LOGIN SYSTEM (24h) ============
-function loginCheck() {
-  const pwd = document.getElementById('pwdinput').value.trim();
-  if (pwd === 'SMPM_CU') {
-    localStorage.setItem('smpm_login_time', Date.now().toString());
-    document.getElementById('loginmodal').style.display = 'none';
-    document.getElementById('pwdinput').value = '';
-    console.log('✅ Login OK — Session 24h');
-    load(true); // Charger l'app
-  } else {
-    alert('❌ Code incorrect');
-    document.getElementById('pwdinput').value = '';
-    document.getElementById('pwdinput').focus();
-  }
-}
-
-// Au démarrage: afficher TOUJOURS la modale d'abord
-document.getElementById('loginmodal').style.display = 'flex';
-document.getElementById('pwdinput')?.focus();
-
-// Vérifier si déjà connecté (après 1s)
-setTimeout(() => {
-  const loginTime = localStorage.getItem('smpm_login_time');
-  const now = Date.now();
-  const ttl24h = 24 * 60 * 60 * 1000;
-  
-  if (loginTime && (now - parseInt(loginTime)) <= ttl24h) {
-    // Déjà connecté et pas expiré → cacher la modale ET charger l'app
-    document.getElementById('loginmodal').style.display = 'none';
-    load(true);
-  } else {
-    // Pas connecté ou expiré → garder la modale visible
-    document.getElementById('loginmodal').style.display = 'flex';
-    localStorage.removeItem('smpm_login_time');
-    document.getElementById('pwdinput').focus();
-  }
-}, 500);
 
 
 function loginCheck() {
-  const pwd = document.getElementById('pwdinput').value.trim();
+  var pwd = document.getElementById('pwdinput').value;
   if (pwd === 'SMPM_CU') {
-    localStorage.setItem('smpm_login_time', Date.now().toString());
+    localStorage.setItem('smpm_login_time', Date.now());
     document.getElementById('loginmodal').style.display = 'none';
-    load(true);
+    console.log('✅ Login OK');
+    if (typeof load === 'function') load(true);
   } else {
-    alert('❌ Code incorrect');
+    alert('Code incorrect');
     document.getElementById('pwdinput').value = '';
-    document.getElementById('pwdinput').focus();
   }
 }
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    const loginModal = document.getElementById('loginmodal');
-    const loginTime = localStorage.getItem('smpm_login_time');
-    const now = Date.now();
-    if (!loginTime || (now - parseInt(loginTime)) > 86400000) {
-      loginModal.style.display = 'flex';
-      localStorage.removeItem('smpm_login_time');
-      document.getElementById('pwdinput').focus();
+
+// Au chargement
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    var loginTime = localStorage.getItem('smpm_login_time');
+    var now = Date.now();
+    var valid = loginTime && (now - loginTime) < 86400000;
+    
+    if (valid) {
+      document.getElementById('loginmodal').style.display = 'none';
+      if (typeof load === 'function') load(true);
     } else {
-      loginModal.style.display = 'none';
-      load(true);
+      document.getElementById('loginmodal').style.display = 'flex';
+      if (loginTime) localStorage.removeItem('smpm_login_time');
+      document.getElementById('pwdinput').focus();
     }
-  }, 100);
+  }, 200);
 });
 </script>
 <script>
@@ -1061,105 +996,40 @@ if(snap && snap.epi && api.url()){
 }
 
 // ============ LOGIN SYSTEM (24h) ============
-function loginCheck() {
-  const pwd = document.getElementById('pwdinput').value.trim();
-  if(pwd === 'SMPM_CU') {
-    localStorage.setItem('smpm_login_time', Date.now().toString());
-    document.getElementById('loginmodal').style.display = 'none';
-    document.getElementById('pwdinput').value = '';
-    console.log('✅ Login OK');
-  } else {
-    alert('❌ Code incorrect');
-    document.getElementById('pwdinput').value = '';
-    document.getElementById('pwdinput').focus();
-  }
-}
 
-function checkLogin() {
-  const loginTime = localStorage.getItem('smpm_login_time');
-  const now = Date.now();
-  const ttl24h = 24 * 60 * 60 * 1000;
-  
-  if(!loginTime || (now - parseInt(loginTime)) > ttl24h) {
-    document.getElementById('loginmodal').style.display = 'flex';
-    localStorage.removeItem('smpm_login_time');
-    document.getElementById('pwdinput').focus();
-  } else {
-    document.getElementById('loginmodal').style.display = 'none';
-  }
-}
-
-// Vérifier login au démarrage
-window.addEventListener('load', () => {
-  setTimeout(checkLogin, 100);
-  document.getElementById('pwdinput')?.focus();
-});
 
 
 // ============ LOGIN SYSTEM (24h) ============
-function loginCheck() {
-  const pwd = document.getElementById('pwdinput').value.trim();
-  if (pwd === 'SMPM_CU') {
-    localStorage.setItem('smpm_login_time', Date.now().toString());
-    document.getElementById('loginmodal').style.display = 'none';
-    document.getElementById('pwdinput').value = '';
-    console.log('✅ Login OK — Session 24h');
-    load(true); // Charger l'app
-  } else {
-    alert('❌ Code incorrect');
-    document.getElementById('pwdinput').value = '';
-    document.getElementById('pwdinput').focus();
-  }
-}
-
-// Au démarrage: afficher TOUJOURS la modale d'abord
-document.getElementById('loginmodal').style.display = 'flex';
-document.getElementById('pwdinput')?.focus();
-
-// Vérifier si déjà connecté (après 1s)
-setTimeout(() => {
-  const loginTime = localStorage.getItem('smpm_login_time');
-  const now = Date.now();
-  const ttl24h = 24 * 60 * 60 * 1000;
-  
-  if (loginTime && (now - parseInt(loginTime)) <= ttl24h) {
-    // Déjà connecté et pas expiré → cacher la modale ET charger l'app
-    document.getElementById('loginmodal').style.display = 'none';
-    load(true);
-  } else {
-    // Pas connecté ou expiré → garder la modale visible
-    document.getElementById('loginmodal').style.display = 'flex';
-    localStorage.removeItem('smpm_login_time');
-    document.getElementById('pwdinput').focus();
-  }
-}, 500);
 
 
 function loginCheck() {
-  const pwd = document.getElementById('pwdinput').value.trim();
+  var pwd = document.getElementById('pwdinput').value;
   if (pwd === 'SMPM_CU') {
-    localStorage.setItem('smpm_login_time', Date.now().toString());
+    localStorage.setItem('smpm_login_time', Date.now());
     document.getElementById('loginmodal').style.display = 'none';
-    load(true);
+    console.log('✅ Login OK');
+    if (typeof load === 'function') load(true);
   } else {
-    alert('❌ Code incorrect');
+    alert('Code incorrect');
     document.getElementById('pwdinput').value = '';
-    document.getElementById('pwdinput').focus();
   }
 }
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    const loginModal = document.getElementById('loginmodal');
-    const loginTime = localStorage.getItem('smpm_login_time');
-    const now = Date.now();
-    if (!loginTime || (now - parseInt(loginTime)) > 86400000) {
-      loginModal.style.display = 'flex';
-      localStorage.removeItem('smpm_login_time');
-      document.getElementById('pwdinput').focus();
+
+// Au chargement
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    var loginTime = localStorage.getItem('smpm_login_time');
+    var now = Date.now();
+    var valid = loginTime && (now - loginTime) < 86400000;
+    
+    if (valid) {
+      document.getElementById('loginmodal').style.display = 'none';
+      if (typeof load === 'function') load(true);
     } else {
-      loginModal.style.display = 'none';
-      load(true);
+      document.getElementById('loginmodal').style.display = 'flex';
+      if (loginTime) localStorage.removeItem('smpm_login_time');
+      document.getElementById('pwdinput').focus();
     }
-  }, 100);
+  }, 200);
 });
 </script>
