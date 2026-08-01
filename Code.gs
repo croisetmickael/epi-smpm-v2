@@ -23,7 +23,6 @@ var CONFIG = {
   INV_CODE:  '1880',  // code requis pour modifier l'inventaire
   TELEGRAM_BOT_TOKEN: 'VOTRE_TOKEN_ICI',     // obtenu de @BotFather
   TELEGRAM_CHAT_ID:   'VOTRE_CHAT_ID_ICI',   // obtenu de @userinfobot
-  SUIVI_ID:           '1qKrw0kTTAhJNzYQyV8nckhM-knuQ01BcidDvzLXb2oQ'  // journal présence/manœuvres
 };
 
 var EPI_SHEET = 'EPI PERSONNELS SMPM';
@@ -51,8 +50,8 @@ function doGet(e) {
   if (hit) {
     return ContentService.createTextOutput(hit).setMimeType(ContentService.MimeType.JSON);
   }
-  var out = { ok: true, version: 'V3.10', ts: new Date().toISOString(), warnings: [] };
-  var parts = { epi: readEpi_, cordes: readCordes_, agents: readAgents_, inventaire: readInventaire_, reformes: readReformes_, dashboards: readDashboards_, presence: readPresence_ };
+  var out = { ok: true, version: 'V3.9', ts: new Date().toISOString(), warnings: [] };
+  var parts = { epi: readEpi_, cordes: readCordes_, agents: readAgents_, inventaire: readInventaire_, reformes: readReformes_, dashboards: readDashboards_ };
   Object.keys(parts).forEach(function(k) {
     try { out[k] = parts[k](); }
     catch (err) {
@@ -69,7 +68,6 @@ function doGet(e) {
 function ssEpi_()    { return SpreadsheetApp.openById(CONFIG.EPI_ID); }
 function ssCordes_() { return SpreadsheetApp.openById(CONFIG.CORDES_ID); }
 function ssInv_()    { return SpreadsheetApp.openById(CONFIG.INV_ID); }
-function ssSuivi_()  { return SpreadsheetApp.openById(CONFIG.SUIVI_ID); }
 
 // Retrouve une feuille même si son nom diffère légèrement
 // (espaces, accents, majuscules). Sinon, erreur explicite listant les feuilles.
@@ -218,62 +216,6 @@ function readReformes_() {
     }
   }
   return { headers: ['FAMILLE','TYPE','NUM SERIE','SPECIALISTE','REFORME','CAUSE','OBS'], rows: rows };
-}
-
-/* ============ PRÉSENCE & MANŒUVRES ============ */
-function readPresence_() {
-  try {
-    var sh = ssSuivi_().getSheetByName('Suivi');
-    if (!sh) return { headers: [], rows: [] };
-    var vals = sh.getDataRange().getDisplayValues();
-    if (vals.length < 2) return { headers: [], rows: [] };
-    
-    // En-têtes : Date, Heures, Agent, Manœuvre, Mât, Treuil, Rôle, Observation
-    var headers = vals[0].map(clean_);
-    var dateIdx = -1, agentIdx = -1, manIdx = -1, obsIdx = -1;
-    for (var h = 0; h < headers.length; h++) {
-      if (headers[h].indexOf('DATE') === 0) dateIdx = h;
-      if (headers[h].indexOf('AGENT') === 0) agentIdx = h;
-      if (headers[h].indexOf('MANOEUVRE') === 0) manIdx = h;
-      if (headers[h].indexOf('OBSERVATION') === 0) obsIdx = h;
-    }
-    
-    if (dateIdx < 0 || agentIdx < 0 || manIdx < 0) return { headers: [], rows: [] };
-    
-    // Compte une manœuvre par agent par jour (dédoublonne), filtre "intervention"
-    var agentDays = {};  // key: "NOM_Prénom|Date"
-    var agentCount = {}; // key: "NOM Prénom", value: count
-    
-    for (var i = 1; i < vals.length; i++) {
-      var obs = clean_(vals[i][obsIdx] || '').toLowerCase();
-      if (obs.indexOf('intervention') >= 0) continue;  // skip si "intervention"
-      
-      var dt = clean_(vals[i][dateIdx]);
-      var ag = clean_(vals[i][agentIdx]);
-      var mn = clean_(vals[i][manIdx]);
-      
-      if (!dt || !ag || !mn) continue;
-      
-      var key = ag + '|' + dt;
-      if (!agentDays[key]) {
-        agentDays[key] = 1;
-        if (!agentCount[ag]) agentCount[ag] = 0;
-        agentCount[ag]++;
-      }
-    }
-    
-    // Transformer en array avec NOM et MANOEUVRES
-    var rows = [];
-    for (var ag in agentCount) {
-      rows.push({ values: [ag, agentCount[ag]] });
-    }
-    rows.sort(function(a,b) { return a.values[0].localeCompare(b.values[0]); });
-    
-    return { headers: ['NOM','MANOEUVRES'], rows: rows };
-  } catch (e) {
-    Logger.log('Présence error: ' + e);
-    return { headers: [], rows: [] };
-  }
 }
 
 /* ============ SYNTHESES OFFICIELLES (accueil) ============ */
@@ -436,6 +378,15 @@ function sendToTelegram(message) {
   }
 }
 
+// Notifie une connexion réussie à l'application (code d'accès saisi)
+function notifyLogin_(info) {
+  var when = Utilities.formatDate(new Date(), 'Europe/Paris', 'dd/MM/yyyy HH:mm');
+  var msg = '🔓 <b>Connexion à EPI SMPM 80</b>\n' +
+            '🕒 ' + when +
+            (info ? '\nℹ️ ' + String(info).slice(0, 200) : '');
+  sendToTelegram(msg);
+}
+
 /* ================= ÉCRITURE ================= */
 
 function doPost(e) {
@@ -451,6 +402,7 @@ function doPost(e) {
     else if (q.action === 'updateAgent')   updateAgent_(q.nom, q.prenom, q.info);
     else if (q.action === 'updateInv')     updateInv_(q.code, q.emplacement, q.row, q.article, q.quantite);
     else if (q.action === 'addInv')        addInv_(q.code, q.emplacement, q.article, q.quantite);
+    else if (q.action === 'notifyLogin')   { notifyLogin_(q.info); return json_({ ok: true }); }
     else throw new Error('Action inconnue : ' + q.action);
     CacheService.getScriptCache().remove(CACHE_KEY);   // les lectures suivantes sont fraîches
     return json_({ ok: true });

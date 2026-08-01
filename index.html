@@ -1,33 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<script>
-window.addEventListener('unhandledrejection', function(event) {
-  if (event.reason && (String(event.reason).includes('No Listener') || String(event.reason).includes('tabs:outgoing'))) {
-    event.preventDefault();
-    return false;
-  }
-}, true);
-
-window.addEventListener('error', function(event) {
-  if (event.message && (event.message.includes('No Listener') || event.message.includes('tabs:outgoing'))) {
-    event.preventDefault();
-    return false;
-  }
-}, true);
-
-if (window.console) {
-  var originalError = console.error;
-  console.error = function() {
-    var args = Array.from(arguments);
-    if (args.some(a => String(a).includes('No Listener') || String(a).includes('tabs:outgoing'))) {
-      return;
-    }
-    originalError.apply(console, args);
-  };
-}
-</script>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>EPI SMPM 80</title>
@@ -177,33 +150,60 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
 @keyframes sp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.spin{animation:none}}
 @media(min-width:640px){.ovl{align-items:center}.sheet{border-radius:18px}}
-
-#loginmodal {
-  display: flex !important;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  z-index: 99999 !important;
-}
-
-
-#loginmodal { display: flex !important; }
 </style>
 </head>
 <body>
-<!-- LOGIN MODAL SMPM 80 -->
-<div id="loginmodal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,rgba(20,28,46,0.98),rgba(30,42,68,0.98));display:flex;align-items:center;justify-content:center;z-index:99999;font-family:'Barlow Condensed',sans-serif">
-  <div style="background:#fff;border-radius:20px;padding:40px;box-shadow:0 20px 60px rgba(0,0,0,0.3);width:90%;max-width:350px;text-align:center">
-    <h1 style="font-size:1.8rem;margin:0 0 10px 0;color:#141C2E;font-weight:700;letter-spacing:0.02em">EPI SMPM 80</h1>
-    <p style="color:#999;margin:0 0 30px 0;font-size:0.95rem">🔒 Accès sécurisé</p>
-    <input type="password" id="pwdinput" placeholder="Code d'accès" style="width:100%;padding:14px;border:2px solid #E3E6EC;border-radius:10px;font-size:1rem;margin-bottom:15px;box-sizing:border-box;font-family:monospace;letter-spacing:3px;text-align:center" onkeypress="if(event.key==='Enter') loginCheck()">
-    <button onclick="loginCheck()" style="width:100%;padding:14px;background:linear-gradient(160deg,#D8232A,#A01820);color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;font-family:'Barlow Condensed';letter-spacing:0.05em">ACCÉDER</button>
-    <p style="color:#DDD;font-size:0.85rem;margin-top:20px">📱 Session 24h</p>
+
+<div id="loginOverlay" style="position:fixed;inset:0;background:#141C2E;display:flex;align-items:center;justify-content:center;z-index:999999;font-family:sans-serif">
+  <div style="background:#fff;border-radius:16px;padding:36px 32px;width:90%;max-width:340px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.4)">
+    <h1 style="margin:0 0 6px;font-size:1.5rem;color:#141C2E;font-family:'Barlow Condensed',sans-serif">EPI SMPM 80</h1>
+    <p style="margin:0 0 24px;color:#888;font-size:.9rem">Accès sécurisé</p>
+    <input id="loginPwd" type="password" placeholder="Code d'accès" style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:1rem;text-align:center;box-sizing:border-box;margin-bottom:12px">
+    <div id="loginErr" style="color:#D8232A;font-size:.85rem;min-height:18px;margin-bottom:8px"></div>
+    <button id="loginBtn" style="width:100%;padding:12px;background:#D8232A;color:#fff;border:0;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer">ACCÉDER</button>
   </div>
 </div>
 
+<script>
+(function(){
+  var CODE = 'SMPM_CU';
+  var TTL = 24*60*60*1000;
+  var overlay = document.getElementById('loginOverlay');
+  var pwd = document.getElementById('loginPwd');
+  var btn = document.getElementById('loginBtn');
+  var err = document.getElementById('loginErr');
+
+  function tryLogin(){
+    if(pwd.value === CODE){
+      try{ localStorage.setItem('smpm_login_time', String(Date.now())); }catch(e){}
+      overlay.style.display = 'none';
+      try{
+        var apiUrl = (window.SMPM_CONFIG && window.SMPM_CONFIG.API_URL) || '/api/proxy';
+        fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'notifyLogin', info: navigator.userAgent.slice(0,80) })
+        }).catch(function(){});
+      }catch(e){}
+    } else {
+      err.textContent = 'Code incorrect';
+      pwd.value = '';
+      pwd.focus();
+    }
+  }
+
+  btn.addEventListener('click', tryLogin);
+  pwd.addEventListener('keydown', function(e){ if(e.key === 'Enter') tryLogin(); });
+
+  var t = null;
+  try{ t = localStorage.getItem('smpm_login_time'); }catch(e){}
+  if(t && (Date.now() - parseInt(t,10)) < TTL){
+    overlay.style.display = 'none';
+  } else {
+    pwd.focus();
+  }
+})();
+</script>
 
 <header>
   <img id="hlogo" alt="SMPM 80">
@@ -218,12 +218,19 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
   <!-- ================= RÉGLAGES / PREMIER LANCEMENT ================= -->
   <section class="page" id="setup">
     <div class="card">
-      
+      <h2 class="disp" style="font-size:1.3rem;text-transform:uppercase">Connexion au Google Sheet</h2>
+      <p style="color:var(--mut);font-size:.9rem;margin:6px 0 4px">
+        Collez l'URL de votre application Web Apps Script (terminant par <b>/exec</b>).
+        Toutes les données sont lues et écrites directement dans le Google Sheet.</p>
+      <label>URL Apps Script</label>
+      <input id="apiurl" placeholder="https://script.google.com/macros/s/…/exec" inputmode="url" autocapitalize="off">
+      <div class="actions"><button class="btn red" id="btnsave">Enregistrer et charger</button></div>
     </div>
   </section>
 
   <!-- ================= ACCUEIL ================= -->
   <section class="page" id="p-accueil">
+    <div class="card" id="list-accueil" style="background:#F8F9FC;min-height:200px"><div class="loader"><div class="spin"></div>Chargement de la présence…</div></div>
 
     <button class="card" onclick="openQRModal()" style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;border:none;background:linear-gradient(160deg,#E8F0FF,#F0F7FF);padding:16px;width:100%;text-align:center;margin-bottom:10px">
       <span style="font-size:1.8rem">📱</span>
@@ -261,8 +268,12 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
     </button>
     <div class="card" id="alertlist" style="background:#E8F0FF"><div class="loader"><div class="spin"></div>Chargement…</div></div>
     
+    <button class="card" onclick="togglePresence()" style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;border:none;background:linear-gradient(160deg,var(--navy),var(--navy2));color:#fff;padding:14px;width:100%;text-align:center;margin-bottom:0;margin-top:10px">
       <span style="font-size:1.4rem">👥</span>
+      <b style="flex:1;font:700 1.05rem 'Barlow Condensed';text-transform:uppercase;letter-spacing:.03em" id="presencebtn">Présence</b>
+      <span style="font-size:1.1rem;color:#B9C2D6" id="presencearrow">▼</span>
     </button>
+    <div class="card" id="presencelist" style="background:#F8F9FC"><div class="loader"><div class="spin"></div>Chargement de la présence…</div></div>
     <div class="sect">Synthèse officielle</div>
     <div class="card" id="synthese"><div class="empty">Chargement de la synthèse…</div></div>
   </section>
@@ -317,70 +328,8 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
 <div class="ovl" id="ovl"><div class="sheet" id="sheetbox"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="config.js">
-// ============ LOGIN SYSTEM (24h) ============
-
-
-
-// ============ LOGIN SYSTEM (24h) ============
-
-
-function loginCheck() {
-  var code = document.getElementById('pwdinput').value;
-  if (code == 'SMPM_CU') {
-    localStorage.setItem('smpm_login_time', Date.now());
-    location.reload();
-  } else {
-    alert('Code incorrect!');
-  }
-}).value || '';
-  if (pwd === 'SMPM_CU') {
-    localStorage.setItem('smpm_login_time', Date.now());
-    var m = document.getElementById('loginmodal');
-    if (m) m.style.display = 'none';
-    console.log('✅ Login réussi');
-    location.reload();
-  } else {
-    alert('❌ Code incorrect');
-    var inp = document.getElementById('pwdinput');
-    if (inp) inp.value = '';
-    if (inp) inp.focus();
-  }
-}
-
-// Au chargement
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(function() {
-    var loginTime = localStorage.getItem('smpm_login_time');
-    var now = Date.now();
-    var valid = loginTime && (now - loginTime) < 86400000;
-    
-    if (valid) {
-      document.getElementById('loginmodal').style.display = 'none';
-      if (typeof load === 'function') load(true);
-    } else {
-      document.getElementById('loginmodal').style.display = 'flex';
-      if (loginTime) localStorage.removeItem('smpm_login_time');
-      document.getElementById('pwdinput').focus();
-    }
-  }, 200);
-});
-</script>
+<script src="config.js"></script>
 <script>
-// Supprimer les erreurs vendor.js (extensions Chrome, etc)
-window.addEventListener('unhandledrejection', function(e) {
-  if (e.reason && String(e.reason).includes('No Listener')) {
-    e.preventDefault();
-  }
-});
-
-window.addEventListener('error', function(e) {
-  if (e.message && e.message.includes('No Listener')) {
-    e.preventDefault();
-    return true;
-  }
-});
-
 /* ============================================================
    EPI SMPM 80 — toutes les données transitent par Google Sheets
    via l'application Web Apps Script (Code.gs fourni).
@@ -541,12 +490,15 @@ function renderHome(){
   if(t2) t2.classList.toggle('alert', num(st['RÉFORMÉE'])+num(st['RÉFORMÉE CRITIQUE'])>0);
   const tot = nEpi + nCorde;
   const b = $('#bdg'); if(b) { b.hidden = !tot; b.textContent = tot; }
-  ($('#herodate')||{textContent:0}).textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  $('#herodate').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   const parts=[];
   if(SE.perimes!==undefined&&SE.perimes!=='') parts.push(SE.perimes+' EPI périmés'+(num(SE.sous2ans)?' + '+SE.sous2ans+' à renouveler sous 2 ans':''));
   if(Object.keys(st).length) parts.push(num(st['RÉFORMÉE'])+num(st['RÉFORMÉE CRITIQUE'])+' corde(s) à retirer, '+num(st['À SURVEILLER'])+' à surveiller');
-  const herosum = $('#herosum'); if(herosum) herosum.textContent = tot ? 'Synthèse officielle — '+(parts.join(' · ')||tot+' équipement(s) à gérer') : 'Aucune alerte. Tous les équipements sont à jour ✔';
+  $('#herosum').textContent = tot ? 'Synthèse officielle — '+(parts.join(' · ')||tot+' équipement(s) à gérer') : 'Aucune alerte. Tous les équipements sont à jour ✔';
   renderSynthese(SE, TC);
+  
+  // Afficher la présence
+  renderPresence();
   const e = epiAlerts(), c = cordeAlerts(), ref = objs(DB.reformes);
 
   document.querySelectorAll('.tile').forEach(t=>t.classList.toggle('on', t.dataset.f===homeFilter));
@@ -555,14 +507,14 @@ function renderHome(){
   else if(homeFilter==='CORDE'){ list=c; title='Alertes cordes'; }
   else if(homeFilter==='REF'){ title='Équipements réformés';
     $('#alertbtn').textContent=title;
-    ($('#alertlist')||{innerHTML:0}).innerHTML = ref.length ? ref.slice().reverse().map(r=>
+    $('#alertlist').innerHTML = ref.length ? ref.slice().reverse().map(r=>
       `<div class="alrow"><span class="dot gry"></span><div class="tx"><b>${esc(r.TYPE)} ${esc(r['NUM SERIE'])}</b>
        <small>${esc(r.FAMILLE)} · ${esc(r.SPECIALISTE||'')} · ${esc(r.REFORME||'')} ${esc(r.CAUSE?('· '+r.CAUSE):'')}</small></div></div>`).join('')
       : '<div class="empty">Aucun équipement réformé.</div>';
     return;
   } else { list=[...e,...c].sort((x,y)=> x.s===y.s?0 : x.s==='red'?-1:1); }
   $('#alertbtn').textContent=title;
-  ($('#alertlist')||{innerHTML:0}).innerHTML = list.length ? list.map((a,i)=>
+  $('#alertlist').innerHTML = list.length ? list.map((a,i)=>
     `<div class="alrow" style="cursor:pointer" onclick="openAlert(${i},'${homeFilter}')">
       <span class="dot ${a.s}"></span>
       <div class="tx"><b>${esc(a.who)}</b><small>${esc(a.what)} · ${esc(a.info)}</small></div>
@@ -954,6 +906,44 @@ attachSuggest('q-cordes','cordes', o=>{ cordeFilter='TOUTES'; renderCordes(); if
 attachSuggest('q-inv','inv', o=>{ renderInv(); });
 function openQRModal(){ document.getElementById('qrmodal').classList.remove('hidden'); }
 function closeQRModal(){ document.getElementById('qrmodal').classList.add('hidden'); }
+var presenceOpen = true;
+var alertsOpen = true;
+function toggleAlerts(){
+  const list = document.getElementById('alertlist');
+  const arrow = document.getElementById('alertarrow');
+  alertsOpen = !alertsOpen;
+  list.style.display = alertsOpen ? 'block' : 'none';
+  arrow.textContent = alertsOpen ? '▼' : '▶';
+}
+function togglePresence(){
+  const list = document.getElementById('presencelist');
+  const arrow = document.getElementById('presencearrow');
+  presenceOpen = !presenceOpen;
+  list.style.display = presenceOpen ? 'block' : 'none';
+  arrow.textContent = presenceOpen ? '▼' : '▶';
+}
+function renderPresence(){
+  const P = DB.presence || {}; const rows = P.rows || [];
+  if(!rows.length) {
+    $('#presencelist').innerHTML = '<div class="empty">Aucune donnée de présence.</div>';
+    return;
+  }
+  const list = rows.map(r=>{
+    const nom = r.values[0], man = r.values[1]||0;
+    const pct = Math.round((man/7)*100); // 7 manœuvres = 100%
+    const col = pct <= 20 ? '#D8232A' : pct <= 50 ? '#E8930C' : pct <= 75 ? '#F5BC32' : '#1E8A4C';
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <b style="font-size:.95rem">${esc(nom)}</b>
+        <span style="font-size:.85rem;color:var(--mut)">${man} manœuvres · ${pct}%</span>
+      </div>
+      <div style="width:100%;height:12px;background:#F0F2F7;border-radius:6px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${col};transition:width .3s ease"></div>
+      </div>
+    </div>`;
+  }).join('');
+  $('#presencelist').innerHTML = list;
+}
 
 /* ---------------- Modale / navigation / chargement ---------------- */
 function openSheet(html){ $('#sheetbox').innerHTML=html; $('#ovl').classList.add('show'); }
@@ -1004,17 +994,14 @@ function show(page){
 }
 document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>show(b.dataset.p)));
 document.querySelectorAll('.tile').forEach(t=>t.addEventListener('click',()=>{ homeFilter=t.dataset.f; renderHome(); }));
-const qepi=$('#q-epi'); if(qepi) qepi.addEventListener('input', renderEpi);
-const qcordes=$('#q-cordes'); if(qcordes) qcordes.addEventListener('input', renderCordes);
-const qinv=$('#q-inv'); if(qinv) qinv.addEventListener('input', renderInv);
-const selperso=$('#selperso'); if(selperso) selperso.addEventListener('change', showFiche);
+$('#q-epi').addEventListener('input', renderEpi);
+$('#q-cordes').addEventListener('input', renderCordes);
+$('#q-inv').addEventListener('input', renderInv);
+$('#selperso').addEventListener('change', showFiche);
 $('#btnaddcorde').addEventListener('click', addCorde);
-const btnrefresh = $('#btnrefresh');
-if(btnrefresh) btnrefresh.addEventListener('click', ()=>load(true));
-const btnsettings = $('#btnsettings');
-if(btnsettings) btnsettings.addEventListener('click', ()=>{ const apiurl=$('#apiurl'); if(apiurl) apiurl.value=api.url(); show('setup'); });
-const btnsave = $('#btnsave');
-if(btnsave) btnsave.addEventListener('click', ()=>{
+$('#btnrefresh').addEventListener('click', ()=>load(true));
+$('#btnsettings').addEventListener('click', ()=>{ $('#apiurl').value=api.url(); show('setup'); });
+$('#btnsave').addEventListener('click', ()=>{
   const u=$('#apiurl').value.trim();
   if(!/^https:\/\/script\.google\.com\/.+\/exec/.test(u)){ toast('URL invalide — elle doit finir par /exec'); return; }
   localStorage.setItem('smpm_api', u); load(true);
@@ -1032,7 +1019,7 @@ async function load(force, silent){
     if(force && !silent) toast('Données à jour ✔');
   }catch(err){
     syncState('err');
-    if(!DB) ($('#alertlist')||{innerHTML:0}).innerHTML = '<div class="empty">Connexion impossible.<br>Vérifiez l\'URL Apps Script dans ⚙ Réglages.<br><small>'+esc(err.message)+'</small></div>';
+    if(!DB) $('#alertlist').innerHTML = '<div class="empty">Connexion impossible.<br>Vérifiez l\'URL Apps Script dans ⚙ Réglages.<br><small>'+esc(err.message)+'</small></div>';
     if(!silent) toast('Erreur de connexion au Sheet');
   }
 }
@@ -1045,52 +1032,4 @@ if(snap && snap.epi && api.url()){
 } else {
   load();
 }
-
-// ============ LOGIN SYSTEM (24h) ============
-
-
-
-// ============ LOGIN SYSTEM (24h) ============
-
-
-function loginCheck() {
-  var code = document.getElementById('pwdinput').value;
-  if (code == 'SMPM_CU') {
-    localStorage.setItem('smpm_login_time', Date.now());
-    location.reload();
-  } else {
-    alert('Code incorrect!');
-  }
-}).value || '';
-  if (pwd === 'SMPM_CU') {
-    localStorage.setItem('smpm_login_time', Date.now());
-    var m = document.getElementById('loginmodal');
-    if (m) m.style.display = 'none';
-    console.log('✅ Login réussi');
-    location.reload();
-  } else {
-    alert('❌ Code incorrect');
-    var inp = document.getElementById('pwdinput');
-    if (inp) inp.value = '';
-    if (inp) inp.focus();
-  }
-}
-
-// Au chargement
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(function() {
-    var loginTime = localStorage.getItem('smpm_login_time');
-    var now = Date.now();
-    var valid = loginTime && (now - loginTime) < 86400000;
-    
-    if (valid) {
-      document.getElementById('loginmodal').style.display = 'none';
-      if (typeof load === 'function') load(true);
-    } else {
-      document.getElementById('loginmodal').style.display = 'flex';
-      if (loginTime) localStorage.removeItem('smpm_login_time');
-      document.getElementById('pwdinput').focus();
-    }
-  }, 200);
-});
 </script>
