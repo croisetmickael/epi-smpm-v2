@@ -267,13 +267,6 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
       <span style="font-size:1.1rem;color:#B9C2D6" id="alertarrow">▼</span>
     </button>
     <div class="card" id="alertlist" style="background:#E8F0FF"><div class="loader"><div class="spin"></div>Chargement…</div></div>
-    
-    <button class="card" onclick="togglePresence()" style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;border:none;background:linear-gradient(160deg,var(--navy),var(--navy2));color:#fff;padding:14px;width:100%;text-align:center;margin-bottom:0;margin-top:10px">
-      <span style="font-size:1.4rem">👥</span>
-      <b style="flex:1;font:700 1.05rem 'Barlow Condensed';text-transform:uppercase;letter-spacing:.03em" id="presencebtn">Présence</b>
-      <span style="font-size:1.1rem;color:#B9C2D6" id="presencearrow">▼</span>
-    </button>
-    <div class="card" id="presencelist" style="background:#F8F9FC"><div class="loader"><div class="spin"></div>Chargement de la présence…</div></div>
     <div class="sect">Synthèse officielle</div>
     <div class="card" id="synthese"><div class="empty">Chargement de la synthèse…</div></div>
   </section>
@@ -490,15 +483,13 @@ function renderHome(){
   if(t2) t2.classList.toggle('alert', num(st['RÉFORMÉE'])+num(st['RÉFORMÉE CRITIQUE'])>0);
   const tot = nEpi + nCorde;
   const b = $('#bdg'); if(b) { b.hidden = !tot; b.textContent = tot; }
-  $('#herodate').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  {const el=$('#herodate'); if(el) el.textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
   const parts=[];
   if(SE.perimes!==undefined&&SE.perimes!=='') parts.push(SE.perimes+' EPI périmés'+(num(SE.sous2ans)?' + '+SE.sous2ans+' à renouveler sous 2 ans':''));
   if(Object.keys(st).length) parts.push(num(st['RÉFORMÉE'])+num(st['RÉFORMÉE CRITIQUE'])+' corde(s) à retirer, '+num(st['À SURVEILLER'])+' à surveiller');
-  $('#herosum').textContent = tot ? 'Synthèse officielle — '+(parts.join(' · ')||tot+' équipement(s) à gérer') : 'Aucune alerte. Tous les équipements sont à jour ✔';
+  {const el=$('#herosum'); if(el) el.textContent = tot ? 'Synthèse officielle — '+(parts.join(' · ')||tot+' équipement(s) à gérer') : 'Aucune alerte. Tous les équipements sont à jour ✔';}
   renderSynthese(SE, TC);
-  
-  // Afficher la présence
-  renderPresence();
+
   const e = epiAlerts(), c = cordeAlerts(), ref = objs(DB.reformes);
 
   document.querySelectorAll('.tile').forEach(t=>t.classList.toggle('on', t.dataset.f===homeFilter));
@@ -906,7 +897,6 @@ attachSuggest('q-cordes','cordes', o=>{ cordeFilter='TOUTES'; renderCordes(); if
 attachSuggest('q-inv','inv', o=>{ renderInv(); });
 function openQRModal(){ document.getElementById('qrmodal').classList.remove('hidden'); }
 function closeQRModal(){ document.getElementById('qrmodal').classList.add('hidden'); }
-var presenceOpen = true;
 var alertsOpen = true;
 function toggleAlerts(){
   const list = document.getElementById('alertlist');
@@ -914,35 +904,6 @@ function toggleAlerts(){
   alertsOpen = !alertsOpen;
   list.style.display = alertsOpen ? 'block' : 'none';
   arrow.textContent = alertsOpen ? '▼' : '▶';
-}
-function togglePresence(){
-  const list = document.getElementById('presencelist');
-  const arrow = document.getElementById('presencearrow');
-  presenceOpen = !presenceOpen;
-  list.style.display = presenceOpen ? 'block' : 'none';
-  arrow.textContent = presenceOpen ? '▼' : '▶';
-}
-function renderPresence(){
-  const P = DB.presence || {}; const rows = P.rows || [];
-  if(!rows.length) {
-    $('#presencelist').innerHTML = '<div class="empty">Aucune donnée de présence.</div>';
-    return;
-  }
-  const list = rows.map(r=>{
-    const nom = r.values[0], man = r.values[1]||0;
-    const pct = Math.round((man/7)*100); // 7 manœuvres = 100%
-    const col = pct <= 20 ? '#D8232A' : pct <= 50 ? '#E8930C' : pct <= 75 ? '#F5BC32' : '#1E8A4C';
-    return `<div style="margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-        <b style="font-size:.95rem">${esc(nom)}</b>
-        <span style="font-size:.85rem;color:var(--mut)">${man} manœuvres · ${pct}%</span>
-      </div>
-      <div style="width:100%;height:12px;background:#F0F2F7;border-radius:6px;overflow:hidden">
-        <div style="width:${pct}%;height:100%;background:${col};transition:width .3s ease"></div>
-      </div>
-    </div>`;
-  }).join('');
-  $('#presencelist').innerHTML = list;
 }
 
 /* ---------------- Modale / navigation / chargement ---------------- */
