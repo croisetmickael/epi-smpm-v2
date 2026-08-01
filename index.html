@@ -301,6 +301,42 @@ window.addEventListener('load', () => {
   document.getElementById('pwdinput')?.focus();
 });
 
+
+// ============ LOGIN SYSTEM (24h) ============
+function loginCheck() {
+  const pwd = document.getElementById('pwdinput').value.trim();
+  if (pwd === 'SMPM_CU') {
+    localStorage.setItem('smpm_login_time', Date.now().toString());
+    document.getElementById('loginmodal').style.display = 'none';
+    document.getElementById('pwdinput').value = '';
+    console.log('✅ Login OK — Session 24h');
+  } else {
+    alert('❌ Code incorrect');
+    document.getElementById('pwdinput').value = '';
+    document.getElementById('pwdinput').focus();
+  }
+}
+
+function checkLogin() {
+  const loginTime = localStorage.getItem('smpm_login_time');
+  const now = Date.now();
+  const ttl24h = 24 * 60 * 60 * 1000;
+  
+  if (!loginTime || (now - parseInt(loginTime)) > ttl24h) {
+    document.getElementById('loginmodal').style.display = 'flex';
+    localStorage.removeItem('smpm_login_time');
+    document.getElementById('pwdinput').focus();
+  } else {
+    document.getElementById('loginmodal').style.display = 'none';
+  }
+}
+
+// Vérifier login au démarrage
+setTimeout(() => {
+  checkLogin();
+  document.getElementById('pwdinput')?.focus();
+}, 100);
+
 </script>
 <script>
 /* ============================================================
@@ -1002,5 +1038,41 @@ window.addEventListener('load', () => {
   setTimeout(checkLogin, 100);
   document.getElementById('pwdinput')?.focus();
 });
+
+
+// ============ LOGIN SYSTEM (24h) ============
+function loginCheck() {
+  const pwd = document.getElementById('pwdinput').value.trim();
+  if (pwd === 'SMPM_CU') {
+    localStorage.setItem('smpm_login_time', Date.now().toString());
+    document.getElementById('loginmodal').style.display = 'none';
+    document.getElementById('pwdinput').value = '';
+    console.log('✅ Login OK — Session 24h');
+  } else {
+    alert('❌ Code incorrect');
+    document.getElementById('pwdinput').value = '';
+    document.getElementById('pwdinput').focus();
+  }
+}
+
+function checkLogin() {
+  const loginTime = localStorage.getItem('smpm_login_time');
+  const now = Date.now();
+  const ttl24h = 24 * 60 * 60 * 1000;
+  
+  if (!loginTime || (now - parseInt(loginTime)) > ttl24h) {
+    document.getElementById('loginmodal').style.display = 'flex';
+    localStorage.removeItem('smpm_login_time');
+    document.getElementById('pwdinput').focus();
+  } else {
+    document.getElementById('loginmodal').style.display = 'none';
+  }
+}
+
+// Vérifier login au démarrage
+setTimeout(() => {
+  checkLogin();
+  document.getElementById('pwdinput')?.focus();
+}, 100);
 
 </script>
