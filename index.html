@@ -559,6 +559,29 @@ function openAlert(i){
   const a = window._homeList[i]; if(!a) return;
   if(a.fam==='EPI') editEpi(a.agent); else editCorde(a.corde);
 }
+function showAlertsModal(kind){
+  let title, rowsHtml, list;
+  if(kind==='EPI' || kind==='CORDE'){
+    list = kind==='EPI' ? epiAlerts() : cordeAlerts();
+    title = kind==='EPI' ? 'Alertes EPI' : 'Alertes cordes';
+    rowsHtml = list.length ? list.map((a,i)=>
+      `<div class="alrow" style="cursor:pointer" onclick="closeSheet();openAlert(${i})">
+        <span class="dot ${a.s}"></span>
+        <div class="tx"><b>${esc(a.who)}</b><small>${esc(a.what)} · ${esc(a.info)}</small></div>
+        <span class="chip ${a.s==='red'?'red':'amb'}">${a.fam}</span></div>`).join('')
+      : '<div class="empty">Rien à gérer dans cette catégorie ✔</div>';
+    window._homeList = list;
+  } else {
+    list = objs(DB.reformes);
+    title = 'Équipements réformés';
+    rowsHtml = list.length ? list.slice().reverse().map(r=>
+      `<div class="alrow"><span class="dot gry"></span><div class="tx"><b>${esc(r.TYPE)} ${esc(r['NUM SERIE'])}</b>
+       <small>${esc(r.FAMILLE)} · ${esc(r.SPECIALISTE||'')} · ${esc(r.REFORME||'')} ${esc(r.CAUSE?('· '+r.CAUSE):'')}</small></div></div>`).join('')
+      : '<div class="empty">Aucun équipement réformé.</div>';
+  }
+  openSheet(`<h3>${title}</h3><div style="max-height:60vh;overflow:auto">${rowsHtml}</div>
+    <div class="actions"><button class="btn ghost" onclick="closeSheet()">Fermer</button></div>`);
+}
 
 /* ---------------- Rendu EPI ---------------- */
 function epiMatch(a, q){                     // recherche nom OU n'importe quel numéro/type
@@ -974,7 +997,11 @@ function show(page){
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on', b.dataset.p===page));
 }
 document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>show(b.dataset.p)));
-document.querySelectorAll('.tile').forEach(t=>t.addEventListener('click',()=>{ homeFilter=t.dataset.f; renderHome(); }));
+document.querySelectorAll('.tile').forEach(t=>t.addEventListener('click',()=>{
+  homeFilter=t.dataset.f;
+  if(t.dataset.f==='EPI' || t.dataset.f==='CORDE' || t.dataset.f==='REF') showAlertsModal(t.dataset.f);
+  renderHome();
+}));
 {const el=$('#q-epi'); if(el) el.addEventListener('input', renderEpi);}
 {const el=$('#q-cordes'); if(el) el.addEventListener('input', renderCordes);}
 {const el=$('#q-inv'); if(el) el.addEventListener('input', renderInv);}
