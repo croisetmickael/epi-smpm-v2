@@ -1,136 +1,87 @@
-# SMPM — Suivi GRIMP 80 / SDIS 80
+# 🚒 EPI SMPM 80 — GRIMP / SDIS 80
 
-Application de suivi des entraînements, manœuvres et inventaire du GRIMP 80.
-Elle lit et écrit en direct dans ton Google Sheet.
+Application de gestion des EPI personnels, des cordes, du personnel et de l'inventaire VIMP.
 
-Ce guide t'accompagne pas à pas. Les étapes marquées **(toi)** sont celles
-que tu dois faire toi-même (création de comptes, identifiants) — je ne peux
-pas les faire à ta place pour des raisons de sécurité.
+✅ **Vos fichiers d'origine sont conservés tels quels** : mêmes feuilles, même mise en forme,
+même mise en page (SYNTHESE, fiches agents individuelles, RECAP, STATIQUES/DYNAMIQUES/CORDELETTES, caisses…).
+L'application lit et écrit **directement dans ces fichiers Google Sheets** — chaque modification
+faite dans l'app apparaît immédiatement dedans.
 
----
+✅ **Aucune intervention pour les utilisateurs** : ils ouvrent le lien Vercel, c'est tout.
 
-## 1. Préparer le Google Sheet **(toi)**
-
-Ton Sheet principal a déjà les onglets **Manoeuvres**, **Agents**, **Action**,
-**Suivi**, et tu as déjà créé **Suivi_inventaire**. Les matricules sont
-remplis pour tous les agents — c'est réglé.
-
-### 1.1 Onglet "Suivi" (déjà en place, rien à faire)
-Colonnes réelles utilisées par l'app, ligne 4 = en-têtes :
-
-| A | B | C | D | E | F | G | H |
-|---|---|---|---|---|---|---|---|
-| Date | Heures | Agent | Manœuvre | Mât | Treuil | Rôle | Observation |
-
-Le matricule sert uniquement à **identifier** l'agent (recherche dans
-l'onglet Agents) : il n'est jamais recopié tel quel, seul son nom complet
-résolu est écrit dans la colonne "Agent".
-
-### 1.2 Onglet "Suivi_inventaire" (déjà en place, rien à faire)
-Colonnes réelles, ligne 4 = en-têtes :
-
-| A | B | C | D | E |
-|---|---|---|---|---|
-| Date | Heures | Agent | Inventaire | Observation |
-
-La colonne "Inventaire" reçoit un récapitulatif texte du contrôle, par
-exemple : `OK : Corde 50m, Mousqueton — NON OK : Descendeur type 8`.
-
-### 1.3 Onglets d'inventaire — déjà en place ✅
-Pas besoin de créer d'onglet "Inventaire" unique : ton inventaire est
-réparti sur **20 onglets**, un par caisse/emplacement (`CAISSE N°1` à
-`CAISSE N°14`, `COTE GAUCHE`, `COTE DROIT`, `ARRIERE`, `TOURET`,
-`SAC BAROUD`, `Copie de SAC ABORDAGE`). L'app les lit tous et les
-fusionne automatiquement en une seule liste dans l'écran Inventaire.
-
-⚠️ Si tu **renommes** un de ces onglets (par exemple pour corriger
-"Copie de SAC ABORDAGE"), il faut mettre à jour le nom correspondant
-dans `lib/constants.js` (tableau `INVENTORY_LOCATIONS`), sinon cet
-emplacement disparaîtra de l'app.
+```
+Utilisateurs ──▶ App (Vercel, ce dépôt GitHub) ──▶ Apps Script ──▶ Vos 3 Google Sheets D'ORIGINE
+```
 
 ---
 
-## 2. Créer le compte de service Google Cloud **(toi)**
+## ÉTAPE 1 — Mettre les 3 fichiers d'origine sur Google Drive (5 min)
 
-C'est ce qui permet à l'application d'écrire dans ton Sheet.
+1. Déposer sur https://drive.google.com :
+   `EPI_SMPM_FUSION.xlsx` · `CORDES_INVENTAIRE_OPTIMISE.xlsx` · `INVENTAIRE_VIMP.xlsx`
+2. Ouvrir chaque fichier → **Fichier → Enregistrer au format Google Sheets**
+   (la mise en forme est intégralement conservée)
+3. Pour chacun des 3 Google Sheets obtenus, **copier l'ID** dans l'URL :
+   `https://docs.google.com/spreadsheets/d/`**`CECI_EST_L_ID`**`/edit`
 
-1. Va sur https://console.cloud.google.com/ et crée un projet (ou utilise
-   un projet existant).
-2. Dans le menu, va dans **APIs & Services > Library**, cherche
-   **Google Sheets API** et clique **Enable**.
-3. Va dans **APIs & Services > Credentials > Create Credentials >
-   Service account**. Donne-lui un nom (ex. `smpm-app`), valide.
-4. Ouvre ce compte de service créé, onglet **Keys > Add Key > Create new
-   key > JSON**. Un fichier `.json` se télécharge — garde-le précieusement,
-   il contient :
-   - un champ `client_email` → c'est ta variable `GOOGLE_SERVICE_ACCOUNT_EMAIL`
-   - un champ `private_key` → c'est ta variable `GOOGLE_PRIVATE_KEY`
-5. **Partage ton Google Sheet** (bouton "Partager" en haut à droite) avec
-   l'adresse email `client_email` ci-dessus, en droit **Éditeur**.
+## ÉTAPE 2 — Le backend Apps Script (5 min)
 
----
-
-## 3. Mettre le code sur GitHub **(toi, je te guide)**
-
-1. Crée un nouveau dépôt sur https://github.com/new (par exemple
-   `smpm-suivi`), vide, sans README.
-2. Dans le dossier du projet que je t'ai donné, lance :
-   ```bash
-   git init
-   git add .
-   git commit -m "Application SMPM - version initiale"
-   git branch -M main
-   git remote add origin https://github.com/TON-COMPTE/smpm-suivi.git
-   git push -u origin main
+1. Aller sur https://script.google.com → **Nouveau projet**
+2. Coller le contenu du fichier **`Code.gs`** de ce dépôt
+3. En haut du code, remplacer les 3 IDs dans `CONFIG` :
+   ```js
+   var CONFIG = {
+     EPI_ID:    'ID_du_fichier_EPI_SMPM_FUSION',
+     CORDES_ID: 'ID_du_fichier_CORDES',
+     INV_ID:    'ID_du_fichier_INVENTAIRE'
+   };
    ```
+4. 💾 Enregistrer → **Déployer → Nouveau déploiement → ⚙ Application Web**
+   - *Exécuter en tant que* : **Moi** · *Qui a accès* : **Tout le monde**
+5. **Déployer**, autoriser l'accès, puis 📋 **copier l'URL** (finit par `/exec`)
+
+## ÉTAPE 3 — GitHub (5 min)
+
+1. https://github.com → **+ → New repository** → nom `epi-smpm-80` → **Private** → Create
+2. **uploading an existing file** → glisser-déposer tous les fichiers de ce dossier → **Commit**
+3. Ouvrir **`config.js`** sur GitHub → ✏️ Edit → coller l'URL Apps Script :
+   ```js
+   window.SMPM_CONFIG = { API_URL: "https://script.google.com/macros/s/XXXXX/exec" };
+   ```
+   → **Commit changes**
+
+## ÉTAPE 4 — Vercel (5 min)
+
+1. https://vercel.com → **Continue with GitHub**
+2. **Add New → Project → Import** `epi-smpm-80` → **Deploy** (aucun réglage)
+3. 🎉 L'app est en ligne : `https://epi-smpm-80.vercel.app`
+
+Chaque modification sur GitHub redéploie automatiquement (~30 s).
+
+## ÉTAPE 5 — Les utilisateurs (0 configuration)
+
+Envoyer le lien. Installation avec le logo SMPM 80 :
+- **iPhone (Safari)** : Partager ⬆ → *Sur l'écran d'accueil*
+- **Android (Chrome)** : ⋮ → *Ajouter à l'écran d'accueil*
 
 ---
 
-## 4. Déployer sur Vercel **(toi)**
+## Comment l'app écrit dans vos fichiers (sans toucher la mise en page)
 
-1. Va sur https://vercel.com/new et connecte ton compte GitHub.
-2. Sélectionne le dépôt `smpm-suivi` → **Import**.
-3. Vercel détecte automatiquement Next.js, ne change rien aux réglages de
-   build.
-4. Avant de cliquer "Deploy", ouvre **Environment Variables** et ajoute :
+| Action dans l'app | Ce qui se passe dans les fichiers d'origine |
+|---|---|
+| Modifier les EPI d'un agent | Ligne mise à jour dans **EPI PERSONNELS SMPM** **+ fiche individuelle de l'agent synchronisée** (mêmes cellules, mise en forme intacte) |
+| Réformer un élément EPI | Élément vidé de la fiche + ligne ajoutée dans **REFORMES** (format d'origine) |
+| Modifier une corde | Ligne mise à jour dans **RECAP** + report dans **STATIQUES / DYNAMIQUES / CORDELETTES** (STATUT inclus) |
+| Ajouter une corde | Ajoutée à la suite dans **RECAP** et dans sa feuille catégorie |
+| Réformer une corde | **Aucune ligne supprimée** : STATUT passé à « RÉFORMÉE » dans RECAP et la feuille catégorie, archivage complet dans REFORMES (échéance, date de retrait réelle, commentaire) — l'app masque les cordes réformées |
+| Modifier l'inventaire | Protégé par **code** : article/quantité mis à jour dans la feuille caisse d'origine, ajout d'article à la suite de la caisse — aucune ligne supprimée |
 
-   | Nom | Valeur |
-   |---|---|
-   | `GOOGLE_SERVICE_ACCOUNT_EMAIL` | le `client_email` du fichier JSON |
-   | `GOOGLE_PRIVATE_KEY` | le `private_key` du fichier JSON, **entre guillemets**, en gardant les `\n` tels quels |
-   | `SPREADSHEET_ID` | l'ID de ton Sheet (dans l'URL : `.../d/CET_ID/edit`) |
+## Dépannage
 
-5. Clique **Deploy**. Après une minute, ton application est en ligne sur
-   une adresse `https://smpm-suivi.vercel.app` (ou similaire).
-
-Chaque agent peut ouvrir ce lien sur son téléphone, puis utiliser
-"Ajouter à l'écran d'accueil" pour avoir l'icône SMPM comme une vraie
-application.
-
----
-
-## 5. Tester en local avant de déployer (optionnel)
-
-```bash
-npm install
-cp .env.example .env.local   # puis remplis les 3 variables
-npm run dev
-```
-Ouvre http://localhost:3000
-
----
-
-## Structure du projet
-
-```
-pages/
-  index.js        Accueil (Intervention / Manœuvre du jour / Suivi / Inventaire)
-  manoeuvre.js     Saisie Manœuvre/Mât/Treuil/Rôle + validation matricule
-  suivi.js         Historique personnel (filtré par matricule)
-  inventaire.js    Contrôle du matériel, OK/Non OK, validation matricule
-  api/             Fonctions serverless qui lisent/écrivent le Google Sheet
-lib/
-  googleSheets.js  Connexion à l'API Google Sheets
-  agents.js        Recherche d'un agent par matricule
-  constants.js     Noms des onglets, emplacements d'inventaire, dates du jour
-```
+| Problème | Solution |
+|---|---|
+| « Connexion impossible » | Vérifier l'URL dans `config.js` (finit par `/exec`) et l'accès **Tout le monde** du déploiement |
+| « Feuille introuvable » | Vérifier les 3 IDs dans `CONFIG` du Code.gs |
+| Nouvelle version du Code.gs | Apps Script → Déployer → **Gérer les déploiements** → ✏️ → Version : *Nouvelle* (l'URL ne change pas) |
+| Modifs invisibles dans l'app | Appuyer sur ⟳ |

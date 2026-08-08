@@ -164,6 +164,22 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
   </div>
 </div>
 
+<style>
+#notifModal{position:fixed;inset:0;background:rgba(20,28,46,.75);display:none;align-items:center;justify-content:center;z-index:99998;font-family:sans-serif;padding:16px;box-sizing:border-box}
+#notifModal.show{display:flex}
+</style>
+<div id="notifModal">
+  <div style="background:#fff;border-radius:14px;padding:24px;width:100%;max-width:380px;box-shadow:0 10px 40px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="font-size:1.4rem">📩</span>
+      <b style="flex:1;font:700 1.1rem 'Barlow Condensed',sans-serif;color:#141C2E;text-transform:uppercase">Nouveau message</b>
+      <span id="notifCount" style="font-size:.75rem;color:#999"></span>
+    </div>
+    <div id="notifBody" style="color:#333;font-size:.95rem;line-height:1.4;background:#F8F9FC;border-radius:8px;padding:12px;margin-bottom:14px;max-height:40vh;overflow:auto"></div>
+    <button onclick="dismissNotif()" style="width:100%;padding:12px;background:#D8232A;color:#fff;border:0;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer">OK</button>
+  </div>
+</div>
+
 <script>
 (function(){
   var CODE = 'SMPM_CU';
@@ -956,7 +972,7 @@ async function load(force, silent){
     syncState('ok'); saveSnapshot();
     if(DB.warnings && DB.warnings.length){ toast('⚠ ' + DB.warnings[0]); console.warn(DB.warnings); }
     renderAll();
-    if(document.querySelector('.page.on')?.id==='setup') show('p-accueil');
+    checkNotifQueue();
     if(force && !silent) toast('Données à jour ✔');
   }catch(err){
     syncState('err');
@@ -964,6 +980,40 @@ async function load(force, silent){
     if(!silent) toast('Erreur de connexion au Sheet');
   }
 }
+// ============ NOTIFICATIONS RELAYÉES (ex: IMP2 → Telegram → CU) ============
+var notifPending = [];
+var notifSeen = (function(){ try{ return JSON.parse(localStorage.getItem('smpm_notif_seen')||'[]'); }catch(e){ return []; } })();
+function saveNotifSeen(){ try{ localStorage.setItem('smpm_notif_seen', JSON.stringify(notifSeen.slice(-40))); }catch(e){} }
+function checkNotifQueue(){
+  var rows = (DB && DB.notif && DB.notif.rows) || [];
+  rows.forEach(function(r){
+    if(notifSeen.indexOf(r.id) === -1){
+      notifPending.push(r);
+      notifSeen.push(r.id);
+    }
+  });
+  saveNotifSeen();
+  if(notifPending.length && !document.getElementById('notifModal').classList.contains('show')) showNextNotif();
+}
+function showNextNotif(){
+  var modal = document.getElementById('notifModal');
+  if(!notifPending.length){ modal.classList.remove('show'); return; }
+  var n = notifPending[0];
+  var body = document.getElementById('notifBody');
+  var count = document.getElementById('notifCount');
+  var when = '';
+  try{ when = new Date(n.ts).toLocaleString('fr-FR'); }catch(e){ when = n.ts; }
+  body.innerHTML = '<div style="font-size:.8rem;color:#999;margin-bottom:6px">'+esc(n.source||'IMP2')+' · '+esc(when)+'</div><div style="white-space:pre-wrap">'+esc(n.message||'')+'</div>';
+  count.textContent = notifPending.length > 1 ? (notifPending.length + ' notification(s)') : '';
+  modal.classList.add('show');
+}
+function dismissNotif(){
+  notifPending.shift();
+  if(notifPending.length) showNextNotif(); else document.getElementById('notifModal').classList.remove('show');
+}
+// Rafraîchissement automatique périodique (détecte les nouvelles notifications sans action manuelle)
+setInterval(function(){ if(document.getElementById('loginOverlay').style.display==='none') load(false, true); }, 25000);
+
 // Démarrage : snapshot local affiché INSTANTANÉMENT, puis rafraîchissement en arrière-plan
 const snap = loadSnapshot();
 if(snap && snap.epi && api.url()){

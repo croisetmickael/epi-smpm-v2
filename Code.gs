@@ -48,7 +48,9 @@ function doGet(e) {
   var cache = CacheService.getScriptCache();
   var hit = cache.get(CACHE_KEY);
   if (hit) {
-    return ContentService.createTextOutput(hit).setMimeType(ContentService.MimeType.JSON);
+    var cached = JSON.parse(hit);
+    cached.notif = readNotifQueue_();   // toujours frais, même si le reste vient du cache
+    return json_(cached);
   }
   var out = { ok: true, version: 'V3.9', ts: new Date().toISOString(), warnings: [] };
   var parts = { epi: readEpi_, cordes: readCordes_, agents: readAgents_, inventaire: readInventaire_, reformes: readReformes_, dashboards: readDashboards_ };
@@ -62,7 +64,8 @@ function doGet(e) {
   if (out.warnings.length >= 5) return json_({ ok: false, error: out.warnings.join(' — ') });
   var str = JSON.stringify(out);
   try { cache.put(CACHE_KEY, str, CACHE_TTL); } catch (e2) { /* > 100 Ko : on sert sans cache */ }
-  return ContentService.createTextOutput(str).setMimeType(ContentService.MimeType.JSON);
+  out.notif = readNotifQueue_();   // ajouté après la mise en cache (non mis en cache lui-même)
+  return json_(out);
 }
 
 function ssEpi_()    { return SpreadsheetApp.openById(CONFIG.EPI_ID); }
@@ -387,6 +390,34 @@ function notifyLogin_(info) {
   sendToTelegram(msg);
 }
 
+// File d'attente des notifications reçues d'applications tierces (ex: IMP2)
+// Stockée en cache script (partagée entre toutes les exécutions), TTL 6h.
+var NOTIF_QUEUE_KEY = 'smpm_notif_queue_v1';
+var NOTIF_QUEUE_TTL = 21600; // 6h
+
+function relayNotif_(message, source) {
+  if (!message) return;
+  var cache = CacheService.getScriptCache();
+  var raw = cache.get(NOTIF_QUEUE_KEY);
+  var queue = raw ? JSON.parse(raw) : [];
+  queue.push({
+    id: Date.now() + '_' + Math.floor(Math.random() * 1000),
+    ts: new Date().toISOString(),
+    source: source || 'IMP2',
+    message: String(message).slice(0, 1000)
+  });
+  // On garde uniquement les 20 dernières notifications
+  if (queue.length > 20) queue = queue.slice(queue.length - 20);
+  cache.put(NOTIF_QUEUE_KEY, JSON.stringify(queue), NOTIF_QUEUE_TTL);
+}
+
+function readNotifQueue_() {
+  var cache = CacheService.getScriptCache();
+  var raw = cache.get(NOTIF_QUEUE_KEY);
+  var queue = raw ? JSON.parse(raw) : [];
+  return { headers: ['ID', 'TS', 'SOURCE', 'MESSAGE'], rows: queue };
+}
+
 /* ================= ÉCRITURE ================= */
 
 function doPost(e) {
@@ -403,6 +434,7 @@ function doPost(e) {
     else if (q.action === 'updateInv')     updateInv_(q.code, q.emplacement, q.row, q.article, q.quantite);
     else if (q.action === 'addInv')        addInv_(q.code, q.emplacement, q.article, q.quantite);
     else if (q.action === 'notifyLogin')   { notifyLogin_(q.info); return json_({ ok: true }); }
+    else if (q.action === 'relayNotif')    { relayNotif_(q.message, q.source); return json_({ ok: true }); }
     else throw new Error('Action inconnue : ' + q.action);
     CacheService.getScriptCache().remove(CACHE_KEY);   // les lectures suivantes sont fraîches
     return json_({ ok: true });
