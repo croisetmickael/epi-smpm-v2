@@ -1,0 +1,13 @@
+{
+  "name": "SMPM — Suivi GRIMP 80",
+  "short_name": "SMPM",
+  "description": "Suivi des entrainements, manoeuvres et inventaire du GRIMP 80 (SDIS 80)",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#12294a",
+  "theme_color": "#12294a",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
