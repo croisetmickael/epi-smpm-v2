@@ -263,12 +263,20 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
       <button class="tile" data-f="REF"><span class="ic">📦</span><div class="n" id="n-ref">–</div><div class="l">Réformés</div></button>
       <button class="tile" data-f="ALL"><span class="ic">🗂</span><div class="n" id="n-all">–</div><div class="l">Tout afficher</div></button>
     </div>
-    <button class="card" onclick="toggleAlerts()" style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;border:none;background:linear-gradient(160deg,var(--navy),var(--navy2));color:#fff;padding:14px;width:100%;text-align:center;margin-bottom:0">
-      <span style="font-size:1.4rem">📋</span>
-      <b style="flex:1;font:700 1.05rem 'Barlow Condensed';text-transform:uppercase;letter-spacing:.03em" id="alertbtn">À gérer</b>
-      <span style="font-size:1.1rem;color:#B9C2D6" id="alertarrow">▼</span>
+    <button class="card" onclick="toggleManoeuvres()" style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;border:none;background:linear-gradient(160deg,var(--navy),var(--navy2));color:#fff;padding:14px;width:100%;text-align:center;margin-bottom:0">
+      <span style="font-size:1.2rem">📄</span>
+      <b style="flex:1;font:700 1.05rem 'Barlow Condensed';text-transform:uppercase;letter-spacing:.03em" id="manoeuvresbtn">Manœuvre</b>
+      <span style="font-size:1.1rem;color:#B9C2D6" id="manoeuvresarrow">▼</span>
     </button>
-    <div class="card" id="alertlist" style="background:#E8F0FF"><div class="loader"><div class="spin"></div>Chargement…</div></div>
+    <div class="card" id="manoeuvreslist" style="background:#E8F0FF;display:none">
+      <div class="alrow"><a href="manoeuvres/Pantoire_Black-Z.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>Pantoire Black-Z</b><small>Synthèse de montage — versions allongée / ½ assis</small></div></a></div>
+      <div class="alrow"><a href="manoeuvres/TEF.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>TEF</b><small>Technique d'évacuation en façade</small></div></a></div>
+      <div class="alrow"><a href="manoeuvres/PRM_point_fixe.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>PRM point fixe</b><small>Poulie de renvoi mobile sur point fixe</small></div></a></div>
+      <div class="alrow"><a href="manoeuvres/SEP_tripode.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>SEP</b><small>Secours en parois « Tripode »</small></div></a></div>
+      <div class="alrow"><a href="manoeuvres/Tyro_horizontale.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>Tyrolienne horizontale</b><small>Technique tripode</small></div></a></div>
+      <div class="alrow"><a href="manoeuvres/Tyro_oblique.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>Tyrolienne oblique</b><small>Technique tripode</small></div></a></div>
+      <div class="alrow"><a href="manoeuvres/PRM_tyro.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>PRM tyrolienne</b><small>Poulie de renvoi mobile sur tyrolienne tripode</small></div></a></div>
+    </div>
     <div class="sect">Synthèse officielle</div>
     <div class="card" id="synthese"><div class="empty">Chargement de la synthèse…</div></div>
   </section>
@@ -499,20 +507,20 @@ function renderHome(){
   if(homeFilter==='EPI'){ list=e; title='Alertes EPI'; }
   else if(homeFilter==='CORDE'){ list=c; title='Alertes cordes'; }
   else if(homeFilter==='REF'){ title='Équipements réformés';
-    $('#alertbtn').textContent=title;
-    $('#alertlist').innerHTML = ref.length ? ref.slice().reverse().map(r=>
+    {const b=$('#alertbtn'); if(b) b.textContent=title;}
+    {const l=$('#alertlist'); if(l) l.innerHTML = ref.length ? ref.slice().reverse().map(r=>
       `<div class="alrow"><span class="dot gry"></span><div class="tx"><b>${esc(r.TYPE)} ${esc(r['NUM SERIE'])}</b>
        <small>${esc(r.FAMILLE)} · ${esc(r.SPECIALISTE||'')} · ${esc(r.REFORME||'')} ${esc(r.CAUSE?('· '+r.CAUSE):'')}</small></div></div>`).join('')
-      : '<div class="empty">Aucun équipement réformé.</div>';
+      : '<div class="empty">Aucun équipement réformé.</div>';}
     return;
   } else { list=[...e,...c].sort((x,y)=> x.s===y.s?0 : x.s==='red'?-1:1); }
-  $('#alertbtn').textContent=title;
-  $('#alertlist').innerHTML = list.length ? list.map((a,i)=>
+  {const b=$('#alertbtn'); if(b) b.textContent=title;}
+  {const l=$('#alertlist'); if(l) l.innerHTML = list.length ? list.map((a,i)=>
     `<div class="alrow" style="cursor:pointer" onclick="openAlert(${i},'${homeFilter}')">
       <span class="dot ${a.s}"></span>
       <div class="tx"><b>${esc(a.who)}</b><small>${esc(a.what)} · ${esc(a.info)}</small></div>
       <span class="chip ${a.s==='red'?'red':'amb'}">${a.fam}</span></div>`).join('')
-    : '<div class="empty">Rien à gérer dans cette catégorie ✔</div>';
+    : '<div class="empty">Rien à gérer dans cette catégorie ✔</div>';}
   window._homeList = list;
 }
 function renderSynthese(SE, TC){
@@ -903,9 +911,19 @@ var alertsOpen = true;
 function toggleAlerts(){
   const list = document.getElementById('alertlist');
   const arrow = document.getElementById('alertarrow');
+  if(!list || !arrow) return;
   alertsOpen = !alertsOpen;
   list.style.display = alertsOpen ? 'block' : 'none';
   arrow.textContent = alertsOpen ? '▼' : '▶';
+}
+var manoeuvresOpen = false;
+function toggleManoeuvres(){
+  const list = document.getElementById('manoeuvreslist');
+  const arrow = document.getElementById('manoeuvresarrow');
+  if(!list || !arrow) return;
+  manoeuvresOpen = !manoeuvresOpen;
+  list.style.display = manoeuvresOpen ? 'block' : 'none';
+  arrow.textContent = manoeuvresOpen ? '▼' : '▶';
 }
 
 /* ---------------- Modale / navigation / chargement ---------------- */
