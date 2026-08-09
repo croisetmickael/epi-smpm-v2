@@ -621,7 +621,7 @@ function renderStatsBody_(s){
     kv('Nombre d\'agents participants', s.nbAgents));
 
   const manList = s.manoeuvresCU.length
-    ? s.manoeuvresCU.map(m=>kv(m.manoeuvre, '× '+m.count)).join('')
+    ? s.manoeuvresCU.map(m=>kv(m.manoeuvre, m.count)).join('')
     : '<div style="font-family:Arial,sans-serif;color:#666">Aucune manœuvre CU enregistrée.</div>';
   const s2 = sec('Données CU',
     kv('Nombre d\'entrées CU', s.entreesCU) +
