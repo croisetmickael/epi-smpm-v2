@@ -628,9 +628,9 @@ function renderStatsBody_(s){
     kv('Nombre de manœuvres (CU uniquement)', s.nbTypesManoeuvresCU) +
     '<div style="margin-top:8px;border-top:1px solid #B9C2D6;padding-top:6px">' + manList + '</div>');
 
-  const s3 = sec('Top 5 agents',
+  const s3 = sec('Participations par agent',
     s.topAgents.length
-      ? s.topAgents.map((a,i)=>kv((i+1)+'. '+a.agent, a.count+' participation(s)')).join('')
+      ? '<div style="max-height:220px;overflow:auto">' + s.topAgents.map((a,i)=>kv((i+1)+'. '+a.agent, a.count+' participation(s)')).join('') + '</div>'
       : '<div style="font-family:Arial,sans-serif;color:#666">Aucun agent.</div>');
 
   const s4 = sec('Répartition par rôle (top 10)',

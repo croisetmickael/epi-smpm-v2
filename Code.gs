@@ -438,6 +438,7 @@ function computeSuiviStats_() {
   if (!rows.length) return { ok: true, empty: true };
 
   var dateSet = {}, agentSet = {}, agentCount = {}, roleCount = {}, manoeuvreCU = {};
+  var agentDaySeen = {};   // clé "agent|jour" pour ne compter qu'une participation par jour
   var cuCount = 0, minDate = null, maxDate = null;
 
   rows.forEach(function(r){
@@ -454,7 +455,14 @@ function computeSuiviStats_() {
       }
     }
 
-    if (agent) { agentSet[agent] = true; agentCount[agent] = (agentCount[agent]||0) + 1; }
+    if (agent) {
+      agentSet[agent] = true;
+      var comboKey = agent + '|' + (dKey || '?');   // 1 seule participation comptée par agent et par jour
+      if (!agentDaySeen[comboKey]) {
+        agentDaySeen[comboKey] = true;
+        agentCount[agent] = (agentCount[agent]||0) + 1;
+      }
+    }
 
     var roleParts = role ? role.split('/').map(function(s){ return s.trim(); }).filter(Boolean) : [];
     roleParts.forEach(function(rp){ roleCount[rp] = (roleCount[rp]||0) + 1; });
@@ -467,7 +475,7 @@ function computeSuiviStats_() {
   });
 
   var topAgents = Object.keys(agentCount).map(function(a){ return { agent: a, count: agentCount[a] }; })
-    .sort(function(a,b){ return b.count - a.count; }).slice(0, 5);
+    .sort(function(a,b){ return b.count - a.count; });
 
   var topRoles = Object.keys(roleCount).map(function(r){ return { role: r, count: roleCount[r] }; })
     .sort(function(a,b){ return b.count - a.count; }).slice(0, 10);
