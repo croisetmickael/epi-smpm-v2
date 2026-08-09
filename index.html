@@ -276,6 +276,7 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
       <button class="tile" data-f="CORDE"><span class="ic">🧗</span><div class="n" id="n-corde">–</div><div class="l">Alertes cordes</div></button>
       <button class="tile" data-f="REF"><span class="ic">📦</span><div class="n" id="n-ref">–</div><div class="l">Réformés</div></button>
       <button class="tile" onclick="openPdfViewer('https://pdf-s-xi.vercel.app/','Fichiers PDF')"><span class="ic">📄</span><div class="n">↗</div><div class="l">Fichier PDF</div></button>
+      <button class="tile" onclick="showStatsModal()"><span class="ic">📊</span><div class="n">↗</div><div class="l">Statistiques</div></button>
     </div>
     <div class="card" id="pdflist" style="background:#E8F0FF;display:none">
       <div class="alrow"><div onclick="openPdfViewer('manoeuvres/Pantoire_Black-Z.pdf','Pantoire Black-Z')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>Pantoire Black-Z</b><small>Synthèse de montage — versions allongée / ½ assis</small></div></div></div>
@@ -598,6 +599,58 @@ function showAlertsModal(kind){
   }
   openSheet(`<h3>${title}</h3><div style="max-height:60vh;overflow:auto">${rowsHtml}</div>
     <div class="actions"><button class="btn ghost" onclick="closeSheet()">Fermer</button></div>`);
+}
+
+/* ---------------- Statistiques Suivi ---------------- */
+function renderStatsBody_(s){
+  if(s.empty) return '<div class="empty">Aucune donnée dans la feuille Suivi.</div>';
+  const sec = (title, inner) => `
+    <div style="background:#D9E1F2;border-radius:8px;padding:10px 14px;margin-bottom:14px">
+      <div style="font-family:Arial,sans-serif;font-weight:700;color:#1F4E78;font-size:1rem;margin-bottom:8px;text-transform:uppercase">${title}</div>
+      ${inner}
+    </div>`;
+  const kv = (label, val) => `<div style="display:flex;justify-content:space-between;padding:3px 0;font-family:Arial,sans-serif;color:#111"><span>${esc(label)}</span><b>${esc(String(val))}</b></div>`;
+
+  const s1 = sec('Données générales',
+    kv('Nombre total d\'entrées', s.totalEntrees) +
+    kv('Nombre de dates d\'événements', s.nbDates) +
+    kv('Période couverte', s.periode) +
+    kv('Nombre d\'agents participants', s.nbAgents));
+
+  const manList = s.manoeuvresCU.length
+    ? s.manoeuvresCU.map(m=>kv(m.manoeuvre, '× '+m.count)).join('')
+    : '<div style="font-family:Arial,sans-serif;color:#666">Aucune manœuvre CU enregistrée.</div>';
+  const s2 = sec('Données CU',
+    kv('Nombre d\'entrées CU', s.entreesCU) +
+    kv('Nombre de manœuvres (CU uniquement)', s.nbTypesManoeuvresCU) +
+    '<div style="margin-top:8px;border-top:1px solid #B9C2D6;padding-top:6px">' + manList + '</div>');
+
+  const s3 = sec('Top 5 agents',
+    s.topAgents.length
+      ? s.topAgents.map((a,i)=>kv((i+1)+'. '+a.agent, a.count+' participation(s)')).join('')
+      : '<div style="font-family:Arial,sans-serif;color:#666">Aucun agent.</div>');
+
+  const s4 = sec('Répartition par rôle (top 10)',
+    s.topRoles.length
+      ? s.topRoles.map(r=>kv(r.role, '× '+r.count)).join('')
+      : '<div style="font-family:Arial,sans-serif;color:#666">Aucun rôle.</div>');
+
+  return s1 + s2 + s3 + s4;
+}
+async function showStatsModal(){
+  openSheet(`<h3>Statistiques du Suivi</h3><div id="statsBody" style="max-height:60vh;overflow:auto"><div class="loader"><div class="spin"></div>Chargement…</div></div>
+    <div class="actions"><button class="btn ghost" onclick="refreshStatsModal()">🔄 Rafraîchir</button><button class="btn ghost" onclick="closeSheet()">Fermer</button></div>`);
+  await refreshStatsModal();
+}
+async function refreshStatsModal(){
+  const body = document.getElementById('statsBody');
+  if(!body) return;
+  try{
+    const res = await api.post({ action: 'getSuiviStats' });
+    body.innerHTML = renderStatsBody_(res);
+  }catch(err){
+    body.innerHTML = '<div class="empty">Erreur de chargement : '+esc(err.message)+'</div>';
+  }
 }
 
 /* ---------------- Rendu EPI ---------------- */

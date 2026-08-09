@@ -21,6 +21,7 @@ var CONFIG = {
   CORDES_ID: '1E-O3Y7523lLCZEdovDALhHZ3A2bFLHzeFiLFgTu6ji8',   // CORDES_INVENTAIRE_OPTIMISE
   INV_ID:    '1IeZ4YeK2ltfzBy_Rbz2__hYGqT3sh0bW17s9dJ00-lo',   // INVENTAIRE_VIMP
   INV_CODE:  '1880',  // code requis pour modifier l'inventaire
+  SUIVI_ID:  '1qKrw0kTTAhJNzYQyV8nckhM-knuQ01BcidDvzLXb2oQ',   // Suivi (manœuvres)
   TELEGRAM_BOT_TOKEN: 'VOTRE_TOKEN_ICI',     // obtenu de @BotFather
   TELEGRAM_CHAT_ID:   'VOTRE_CHAT_ID_ICI',   // obtenu de @userinfobot
 };
@@ -71,6 +72,7 @@ function doGet(e) {
 function ssEpi_()    { return SpreadsheetApp.openById(CONFIG.EPI_ID); }
 function ssCordes_() { return SpreadsheetApp.openById(CONFIG.CORDES_ID); }
 function ssInv_()    { return SpreadsheetApp.openById(CONFIG.INV_ID); }
+function ssSuivi_()  { return SpreadsheetApp.openById(CONFIG.SUIVI_ID); }
 
 // Retrouve une feuille même si son nom diffère légèrement
 // (espaces, accents, majuscules). Sinon, erreur explicite listant les feuilles.
@@ -418,6 +420,75 @@ function readNotifQueue_() {
   return { headers: ['ID', 'TS', 'SOURCE', 'MESSAGE'], rows: queue };
 }
 
+// Statistiques de la feuille "Suivi" (Date, Heures, Agent, Manœuvre, Mât, Treuil, Rôle, Observation)
+function fmtDate_(v) {
+  if (!v) return '';
+  var d = (v instanceof Date) ? v : new Date(v);
+  if (isNaN(d.getTime())) return String(v);
+  return Utilities.formatDate(d, 'Europe/Paris', 'dd/MM/yyyy');
+}
+
+function computeSuiviStats_() {
+  var ss = ssSuivi_();
+  var sh = ss.getSheetByName('Suivi') || ss.getSheets()[0];
+  var data = sh.getDataRange().getValues();
+  if (data.length < 2) return { ok: true, empty: true };
+
+  var rows = data.slice(1).filter(function(r){ return r[0] !== '' && r[2] !== ''; }); // Date + Agent non vides
+  if (!rows.length) return { ok: true, empty: true };
+
+  var dateSet = {}, agentSet = {}, agentCount = {}, roleCount = {}, manoeuvreCU = {};
+  var cuCount = 0, minDate = null, maxDate = null;
+
+  rows.forEach(function(r){
+    var dateVal = r[0], agent = String(r[2]||'').trim(),
+        manoeuvre = String(r[3]||'').trim(), role = String(r[6]||'').trim();
+
+    var dKey = fmtDate_(dateVal);
+    if (dKey) {
+      dateSet[dKey] = true;
+      var dObj = (dateVal instanceof Date) ? dateVal : new Date(dateVal);
+      if (!isNaN(dObj.getTime())) {
+        if (!minDate || dObj < minDate) minDate = dObj;
+        if (!maxDate || dObj > maxDate) maxDate = dObj;
+      }
+    }
+
+    if (agent) { agentSet[agent] = true; agentCount[agent] = (agentCount[agent]||0) + 1; }
+
+    var roleParts = role ? role.split('/').map(function(s){ return s.trim(); }).filter(Boolean) : [];
+    roleParts.forEach(function(rp){ roleCount[rp] = (roleCount[rp]||0) + 1; });
+
+    var isCU = roleParts.some(function(rp){ return rp.toUpperCase() === 'CU'; });
+    if (isCU) {
+      cuCount++;
+      if (manoeuvre) manoeuvreCU[manoeuvre] = (manoeuvreCU[manoeuvre]||0) + 1;
+    }
+  });
+
+  var topAgents = Object.keys(agentCount).map(function(a){ return { agent: a, count: agentCount[a] }; })
+    .sort(function(a,b){ return b.count - a.count; }).slice(0, 5);
+
+  var topRoles = Object.keys(roleCount).map(function(r){ return { role: r, count: roleCount[r] }; })
+    .sort(function(a,b){ return b.count - a.count; }).slice(0, 10);
+
+  var manoeuvresList = Object.keys(manoeuvreCU).map(function(m){ return { manoeuvre: m, count: manoeuvreCU[m] }; })
+    .sort(function(a,b){ return b.count - a.count; });
+
+  return {
+    ok: true, empty: false,
+    totalEntrees: rows.length,
+    nbDates: Object.keys(dateSet).length,
+    periode: (minDate && maxDate) ? (fmtDate_(minDate) + ' → ' + fmtDate_(maxDate)) : '—',
+    nbAgents: Object.keys(agentSet).length,
+    entreesCU: cuCount,
+    nbTypesManoeuvresCU: Object.keys(manoeuvreCU).length,
+    manoeuvresCU: manoeuvresList,
+    topAgents: topAgents,
+    topRoles: topRoles
+  };
+}
+
 /* ================= ÉCRITURE ================= */
 
 function doPost(e) {
@@ -435,6 +506,7 @@ function doPost(e) {
     else if (q.action === 'addInv')        addInv_(q.code, q.emplacement, q.article, q.quantite);
     else if (q.action === 'notifyLogin')   { notifyLogin_(q.info); return json_({ ok: true }); }
     else if (q.action === 'relayNotif')    { relayNotif_(q.message, q.source); return json_({ ok: true }); }
+    else if (q.action === 'getSuiviStats') { return json_(computeSuiviStats_()); }
     else throw new Error('Action inconnue : ' + q.action);
     CacheService.getScriptCache().remove(CACHE_KEY);   // les lectures suivantes sont fraîches
     return json_({ ok: true });
