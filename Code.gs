@@ -63,6 +63,7 @@ function doGet(e) {
     }
   });
   if (out.warnings.length >= 5) return json_({ ok: false, error: out.warnings.join(' — ') });
+  out.interventions = computeInterventionsCount_();
   var str = JSON.stringify(out);
   try { cache.put(CACHE_KEY, str, CACHE_TTL); } catch (e2) { /* > 100 Ko : on sert sans cache */ }
   out.notif = readNotifQueue_();   // ajouté après la mise en cache (non mis en cache lui-même)
@@ -426,6 +427,29 @@ function fmtDate_(v) {
   var d = (v instanceof Date) ? v : new Date(v);
   if (isNaN(d.getTime())) return String(v);
   return Utilities.formatDate(d, 'Europe/Paris', 'dd/MM/yyyy');
+}
+
+// Compte le nombre d'interventions distinctes (1 par jour) : lignes CU dont l'Observation contient "intervention"
+function computeInterventionsCount_() {
+  try {
+    var ss = ssSuivi_();
+    var sh = ss.getSheetByName('Suivi') || ss.getSheets()[0];
+    var data = sh.getDataRange().getValues();
+    if (data.length < 2) return 0;
+    var daySet = {};
+    data.slice(1).forEach(function(r){
+      if (r[0] === '' || r[2] === '') return;   // Date + Agent requis
+      var role = String(r[6]||'').trim();
+      var obs  = String(r[7]||'').trim().toLowerCase();
+      var roleParts = role ? role.split('/').map(function(s){ return s.trim(); }).filter(Boolean) : [];
+      var isCU = roleParts.some(function(rp){ return rp.toUpperCase() === 'CU'; });
+      if (isCU && obs.indexOf('intervention') !== -1) {
+        var dKey = fmtDate_(r[0]);
+        if (dKey) daySet[dKey] = true;
+      }
+    });
+    return Object.keys(daySet).length;
+  } catch (e) { return 0; }
 }
 
 function computeSuiviStats_() {

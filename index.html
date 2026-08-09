@@ -150,6 +150,7 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
 @keyframes sp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.spin{animation:none}}
 @media(min-width:640px){.ovl{align-items:center}.sheet{border-radius:18px}}
+@keyframes gyro{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.18)}}
 </style>
 </head>
 <body>
@@ -224,6 +225,10 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
 <header>
   <img id="hlogo" alt="SMPM 80">
   <div class="t"><h1>EPI SMPM 80</h1><small>GRIMP · SDIS 80 · Intervention milieu périlleux</small></div>
+  <div id="intervBadge" style="display:flex;align-items:center;gap:6px;margin-left:10px">
+    <span style="font-size:1.3rem;animation:gyro 1s infinite">🚨</span>
+    <b id="intervNum" style="color:#fff;font:700 1.15rem 'Barlow Condensed',sans-serif">–</b>
+  </div>
   <div class="sp"></div>
   <button class="icobtn" id="btnrefresh" title="Actualiser">⟳</button>
   <button class="icobtn" id="btnsettings" title="Réglages">⚙</button>
@@ -497,6 +502,8 @@ function cordeAlerts(){
 /* ---------------- Rendu ACCUEIL ---------------- */
 function num(x){ const n=parseInt(String(x||'').replace(/\D/g,'')); return isNaN(n)?0:n; }
 function renderHome(){
+  // Afficher le compteur d'interventions dans le bandeau
+  {const iv=$('#intervNum'); if(iv) iv.textContent = (DB.interventions!==undefined && DB.interventions!==null) ? DB.interventions : '–';}
   // Afficher la synthèse officielle
   const Dashboard = DB.dashboards || {};
   const SE = Dashboard.epi || {}, TC = Dashboard.cordes || {};
