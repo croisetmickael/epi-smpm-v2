@@ -276,8 +276,11 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
       <button class="tile" data-f="CORDE"><span class="ic">🧗</span><div class="n" id="n-corde">–</div><div class="l">Alertes cordes</div></button>
       <button class="tile" data-f="REF"><span class="ic">📦</span><div class="n" id="n-ref">–</div><div class="l">Réformés</div></button>
       <button class="tile" onclick="openPdfViewer('https://pdf-s-xi.vercel.app/','Fichiers PDF')"><span class="ic">📄</span><div class="n">↗</div><div class="l">Fichier PDF</div></button>
-      <button class="tile" onclick="showStatsModal()"><span class="ic">📊</span><div class="n">↗</div><div class="l">Statistiques</div></button>
     </div>
+    <button class="card" onclick="showStatsModal()" style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;border:none;background:linear-gradient(160deg,var(--navy),var(--navy2));color:#fff;padding:14px;width:100%;text-align:center;margin-bottom:0;margin-top:10px">
+      <span style="font-size:1.2rem">📊</span>
+      <b style="flex:1;font:700 1.05rem 'Barlow Condensed';text-transform:uppercase;letter-spacing:.03em">Statistiques</b>
+    </button>
     <div class="card" id="pdflist" style="background:#E8F0FF;display:none">
       <div class="alrow"><div onclick="openPdfViewer('manoeuvres/Pantoire_Black-Z.pdf','Pantoire Black-Z')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>Pantoire Black-Z</b><small>Synthèse de montage — versions allongée / ½ assis</small></div></div></div>
       <div class="alrow"><div onclick="openPdfViewer('manoeuvres/TEF.pdf','TEF')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>TEF</b><small>Technique d'évacuation en façade</small></div></div></div>
