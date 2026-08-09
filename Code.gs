@@ -478,7 +478,7 @@ function computeSuiviStats_() {
     .sort(function(a,b){ return b.count - a.count; });
 
   var topRoles = Object.keys(roleCount).map(function(r){ return { role: r, count: roleCount[r] }; })
-    .sort(function(a,b){ return b.count - a.count; }).slice(0, 10);
+    .sort(function(a,b){ return b.count - a.count; });
 
   var manoeuvresList = Object.keys(manoeuvreCU).map(function(m){ return { manoeuvre: m, count: manoeuvreCU[m] }; })
     .sort(function(a,b){ return b.count - a.count; });

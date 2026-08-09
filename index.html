@@ -633,9 +633,9 @@ function renderStatsBody_(s){
       ? '<div style="max-height:220px;overflow:auto">' + s.topAgents.map((a,i)=>kv((i+1)+'. '+a.agent, a.count+' participation(s)')).join('') + '</div>'
       : '<div style="font-family:Arial,sans-serif;color:#666">Aucun agent.</div>');
 
-  const s4 = sec('Répartition par rôle (top 10)',
+  const s4 = sec('Répartition par rôle',
     s.topRoles.length
-      ? s.topRoles.map(r=>kv(r.role, '× '+r.count)).join('')
+      ? '<div style="max-height:220px;overflow:auto">' + s.topRoles.map(r=>kv(r.role, r.count)).join('') + '</div>'
       : '<div style="font-family:Arial,sans-serif;color:#666">Aucun rôle.</div>');
 
   return s1 + s2 + s3 + s4;
