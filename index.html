@@ -263,19 +263,28 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
       <span style="font-size:1.1rem;color:#B9C2D6" id="manoeuvresarrow">▼</span>
     </button>
     <div class="card" id="manoeuvreslist" style="background:#E8F0FF;display:none">
-      <div class="alrow"><a href="manoeuvres/Pantoire_Black-Z.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>Pantoire Black-Z</b><small>Synthèse de montage — versions allongée / ½ assis</small></div></a></div>
-      <div class="alrow"><a href="manoeuvres/TEF.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>TEF</b><small>Technique d'évacuation en façade</small></div></a></div>
-      <div class="alrow"><a href="manoeuvres/PRM_point_fixe.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>PRM point fixe</b><small>Poulie de renvoi mobile sur point fixe</small></div></a></div>
-      <div class="alrow"><a href="manoeuvres/SEP_tripode.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>SEP</b><small>Secours en parois « Tripode »</small></div></a></div>
-      <div class="alrow"><a href="manoeuvres/Tyro_horizontale.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>Tyrolienne horizontale</b><small>Technique tripode</small></div></a></div>
-      <div class="alrow"><a href="manoeuvres/Tyro_oblique.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>Tyrolienne oblique</b><small>Technique tripode</small></div></a></div>
-      <div class="alrow"><a href="manoeuvres/PRM_tyro.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>PRM tyrolienne</b><small>Poulie de renvoi mobile sur tyrolienne tripode</small></div></a></div>
+      <div class="alrow"><div onclick="openPdfViewer('manoeuvres/Pantoire_Black-Z.pdf','Pantoire Black-Z')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>Pantoire Black-Z</b><small>Synthèse de montage — versions allongée / ½ assis</small></div></div></div>
+      <div class="alrow"><div onclick="openPdfViewer('manoeuvres/TEF.pdf','TEF')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>TEF</b><small>Technique d'évacuation en façade</small></div></div></div>
+      <div class="alrow"><div onclick="openPdfViewer('manoeuvres/PRM_point_fixe.pdf','PRM point fixe')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>PRM point fixe</b><small>Poulie de renvoi mobile sur point fixe</small></div></div></div>
+      <div class="alrow"><div onclick="openPdfViewer('manoeuvres/SEP_tripode.pdf','SEP')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>SEP</b><small>Secours en parois « Tripode »</small></div></div></div>
+      <div class="alrow"><div onclick="openPdfViewer('manoeuvres/Tyro_horizontale.pdf','Tyrolienne horizontale')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>Tyrolienne horizontale</b><small>Technique tripode</small></div></div></div>
+      <div class="alrow"><div onclick="openPdfViewer('manoeuvres/Tyro_oblique.pdf','Tyrolienne oblique')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>Tyrolienne oblique</b><small>Technique tripode</small></div></div></div>
+      <div class="alrow"><div onclick="openPdfViewer('manoeuvres/PRM_tyro.pdf','PRM tyrolienne')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>PRM tyrolienne</b><small>Poulie de renvoi mobile sur tyrolienne tripode</small></div></div></div>
     </div>
     <div class="tiles">
       <button class="tile" data-f="EPI"><span class="ic">🦺</span><div class="n" id="n-epi">–</div><div class="l">Alertes EPI</div></button>
       <button class="tile" data-f="CORDE"><span class="ic">🧗</span><div class="n" id="n-corde">–</div><div class="l">Alertes cordes</div></button>
       <button class="tile" data-f="REF"><span class="ic">📦</span><div class="n" id="n-ref">–</div><div class="l">Réformés</div></button>
-      <a href="https://drive.google.com/drive/folders/1AB9ZBqImToOQmkkU5JsnLTSnJcn2Gt8s?usp=drive_link" target="_blank" class="tile" style="text-decoration:none"><span class="ic">📄</span><div class="n">↗</div><div class="l">Fichier PDF</div></a>
+      <button class="tile" onclick="openPdfViewer('https://pdf-s-xi.vercel.app/','Fichiers PDF')"><span class="ic">📄</span><div class="n">↗</div><div class="l">Fichier PDF</div></button>
+    </div>
+    <div class="card" id="pdflist" style="background:#E8F0FF;display:none">
+      <div class="alrow"><div onclick="openPdfViewer('manoeuvres/Pantoire_Black-Z.pdf','Pantoire Black-Z')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>Pantoire Black-Z</b><small>Synthèse de montage — versions allongée / ½ assis</small></div></div></div>
+      <div class="alrow"><div onclick="openPdfViewer('manoeuvres/TEF.pdf','TEF')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>TEF</b><small>Technique d'évacuation en façade</small></div></div></div>
+      <div class="alrow"><div onclick="openPdfViewer('manoeuvres/PRM_point_fixe.pdf','PRM point fixe')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>PRM point fixe</b><small>Poulie de renvoi mobile sur point fixe</small></div></div></div>
+      <div class="alrow"><div onclick="openPdfViewer('manoeuvres/SEP_tripode.pdf','SEP')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>SEP</b><small>Secours en parois « Tripode »</small></div></div></div>
+      <div class="alrow"><div onclick="openPdfViewer('manoeuvres/Tyro_horizontale.pdf','Tyrolienne horizontale')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>Tyrolienne horizontale</b><small>Technique tripode</small></div></div></div>
+      <div class="alrow"><div onclick="openPdfViewer('manoeuvres/Tyro_oblique.pdf','Tyrolienne oblique')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>Tyrolienne oblique</b><small>Technique tripode</small></div></div></div>
+      <div class="alrow"><div onclick="openPdfViewer('manoeuvres/PRM_tyro.pdf','PRM tyrolienne')" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%;cursor:pointer"><span>📕</span><div class="tx"><b>PRM tyrolienne</b><small>Poulie de renvoi mobile sur tyrolienne tripode</small></div></div></div>
     </div>
     <div class="sect">Synthèse officielle</div>
     <div class="card" id="synthese"><div class="empty">Chargement de la synthèse…</div></div>
@@ -330,6 +339,14 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
 
 <div class="ovl" id="ovl"><div class="sheet" id="sheetbox"></div></div>
 <div class="toast" id="toast"></div>
+
+<div id="pdfViewerModal" style="position:fixed;inset:0;background:#141C2E;display:none;z-index:99997;flex-direction:column">
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0F1626;color:#fff">
+    <b id="pdfViewerTitle" style="flex:1;font:700 1rem 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></b>
+    <button onclick="closePdfViewer()" style="background:#D8232A;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">Fermer</button>
+  </div>
+  <iframe id="pdfViewerFrame" src="" style="flex:1;border:0;background:#fff"></iframe>
+</div>
 
 <script src="config.js"></script>
 <script>
@@ -947,6 +964,28 @@ function toggleManoeuvres(){
   manoeuvresOpen = !manoeuvresOpen;
   list.style.display = manoeuvresOpen ? 'block' : 'none';
   arrow.textContent = manoeuvresOpen ? '▼' : '▶';
+}
+var pdfListOpen = false;
+function togglePdfList(){
+  const list = document.getElementById('pdflist');
+  if(!list) return;
+  pdfListOpen = !pdfListOpen;
+  list.style.display = pdfListOpen ? 'block' : 'none';
+}
+function openPdfViewer(url, title){
+  const modal = document.getElementById('pdfViewerModal');
+  const frame = document.getElementById('pdfViewerFrame');
+  const ttl = document.getElementById('pdfViewerTitle');
+  if(!modal || !frame) return;
+  frame.src = url;
+  if(ttl) ttl.textContent = title || '';
+  modal.style.display = 'flex';
+}
+function closePdfViewer(){
+  const modal = document.getElementById('pdfViewerModal');
+  const frame = document.getElementById('pdfViewerFrame');
+  if(modal) modal.style.display = 'none';
+  if(frame) frame.src = '';
 }
 
 /* ---------------- Modale / navigation / chargement ---------------- */
