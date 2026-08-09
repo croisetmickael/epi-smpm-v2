@@ -257,6 +257,20 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
         <span style="font-size:1.1rem;color:#B9C2D6">↗</span>
       </div>
     </a>
+    <button class="card" onclick="toggleManoeuvres()" style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;border:none;background:linear-gradient(160deg,var(--navy),var(--navy2));color:#fff;padding:14px;width:100%;text-align:center;margin-bottom:0">
+      <span style="font-size:1.2rem">📄</span>
+      <b style="flex:1;font:700 1.05rem 'Barlow Condensed';text-transform:uppercase;letter-spacing:.03em" id="manoeuvresbtn">Manœuvre</b>
+      <span style="font-size:1.1rem;color:#B9C2D6" id="manoeuvresarrow">▼</span>
+    </button>
+    <div class="card" id="manoeuvreslist" style="background:#E8F0FF;display:none">
+      <div class="alrow"><a href="manoeuvres/Pantoire_Black-Z.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>Pantoire Black-Z</b><small>Synthèse de montage — versions allongée / ½ assis</small></div></a></div>
+      <div class="alrow"><a href="manoeuvres/TEF.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>TEF</b><small>Technique d'évacuation en façade</small></div></a></div>
+      <div class="alrow"><a href="manoeuvres/PRM_point_fixe.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>PRM point fixe</b><small>Poulie de renvoi mobile sur point fixe</small></div></a></div>
+      <div class="alrow"><a href="manoeuvres/SEP_tripode.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>SEP</b><small>Secours en parois « Tripode »</small></div></a></div>
+      <div class="alrow"><a href="manoeuvres/Tyro_horizontale.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>Tyrolienne horizontale</b><small>Technique tripode</small></div></a></div>
+      <div class="alrow"><a href="manoeuvres/Tyro_oblique.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>Tyrolienne oblique</b><small>Technique tripode</small></div></a></div>
+      <div class="alrow"><a href="manoeuvres/PRM_tyro.pdf" target="_blank" style="display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;width:100%"><span>📕</span><div class="tx"><b>PRM tyrolienne</b><small>Poulie de renvoi mobile sur tyrolienne tripode</small></div></a></div>
+    </div>
     <div class="tiles">
       <button class="tile" data-f="EPI"><span class="ic">🦺</span><div class="n" id="n-epi">–</div><div class="l">Alertes EPI</div></button>
       <button class="tile" data-f="CORDE"><span class="ic">🧗</span><div class="n" id="n-corde">–</div><div class="l">Alertes cordes</div></button>
