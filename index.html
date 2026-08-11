@@ -152,6 +152,7 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
 @media(min-width:640px){.ovl{align-items:center}.sheet{border-radius:18px}}
 @keyframes gyro{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.18)}}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
 
@@ -351,10 +352,11 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
 
 <div id="pdfViewerModal" style="position:fixed;inset:0;background:#141C2E;display:none;z-index:99997;flex-direction:column">
   <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0F1626;color:#fff">
+    <button onclick="closePdfViewer()" style="background:#1F2A44;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">◀ Retour</button>
     <b id="pdfViewerTitle" style="flex:1;font:700 1rem 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></b>
     <button onclick="closePdfViewer()" style="background:#D8232A;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">Fermer</button>
   </div>
-  <iframe id="pdfViewerFrame" src="" style="flex:1;border:0;background:#fff"></iframe>
+  <div id="pdfViewerPages" style="flex:1;overflow:auto;background:#525659;text-align:center;padding:10px 0"></div>
 </div>
 
 <script src="config.js"></script>
@@ -1035,20 +1037,41 @@ function togglePdfList(){
   pdfListOpen = !pdfListOpen;
   list.style.display = pdfListOpen ? 'block' : 'none';
 }
-function openPdfViewer(url, title){
+async function openPdfViewer(url, title){
   const modal = document.getElementById('pdfViewerModal');
-  const frame = document.getElementById('pdfViewerFrame');
+  const pages = document.getElementById('pdfViewerPages');
   const ttl = document.getElementById('pdfViewerTitle');
-  if(!modal || !frame) return;
-  frame.src = url;
+  if(!modal || !pages) return;
   if(ttl) ttl.textContent = title || '';
+  pages.innerHTML = '<div class="loader" style="color:#fff"><div class="spin"></div>Chargement du document…</div>';
   modal.style.display = 'flex';
+  try{
+    if(window['pdfjsLib']){
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const doc = await pdfjsLib.getDocument(url).promise;
+      pages.innerHTML = '';
+      for(let n=1; n<=doc.numPages; n++){
+        const page = await doc.getPage(n);
+        const scale = Math.min(2, (pages.clientWidth||800) / page.getViewport({scale:1}).width);
+        const viewport = page.getViewport({scale: scale||1});
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width; canvas.height = viewport.height;
+        canvas.style.cssText = 'display:block;margin:0 auto 10px;max-width:100%;box-shadow:0 2px 10px rgba(0,0,0,.4)';
+        pages.appendChild(canvas);
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      }
+    } else {
+      pages.innerHTML = '<div class="empty" style="color:#fff">Impossible de charger la visionneuse PDF (hors ligne ?).</div>';
+    }
+  }catch(err){
+    pages.innerHTML = '<div class="empty" style="color:#fff">Erreur d\'affichage du document.<br><small>'+esc(err.message)+'</small></div>';
+  }
 }
 function closePdfViewer(){
   const modal = document.getElementById('pdfViewerModal');
-  const frame = document.getElementById('pdfViewerFrame');
+  const pages = document.getElementById('pdfViewerPages');
   if(modal) modal.style.display = 'none';
-  if(frame) frame.src = '';
+  if(pages) pages.innerHTML = '';
 }
 
 /* ---------------- Modale / navigation / chargement ---------------- */

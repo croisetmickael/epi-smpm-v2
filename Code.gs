@@ -492,9 +492,9 @@ function computeSuiviStats_() {
     roleParts.forEach(function(rp){ roleCount[rp] = (roleCount[rp]||0) + 1; });
 
     var isCU = roleParts.some(function(rp){ return rp.toUpperCase() === 'CU'; });
-    if (isCU) {
+    if (isCU && manoeuvre) {
       cuCount++;
-      if (manoeuvre) manoeuvreCU[manoeuvre] = (manoeuvreCU[manoeuvre]||0) + 1;
+      manoeuvreCU[manoeuvre] = (manoeuvreCU[manoeuvre]||0) + 1;
     }
   });
 
@@ -618,7 +618,15 @@ function updateAgent_(nom, prenom, info) {
 // la mise à jour toutes seules). Seul RECAP est modifié.
 function updateCorde_(row, values) {
   var sh = getSheetSmart_(ssCordes_(), RECAP);
-  sh.getRange(row, 1, 1, values.length).setValues([values]);
+  var finIdx = CORDES_HEADERS.indexOf('FIN');   // colonne calculée par formule dans le Sheet
+  if (finIdx > -1) {
+    if (finIdx > 0) sh.getRange(row, 1, 1, finIdx).setValues([values.slice(0, finIdx)]);
+    var afterCount = values.length - finIdx - 1;
+    if (afterCount > 0) sh.getRange(row, finIdx + 2, 1, afterCount).setValues([values.slice(finIdx + 1)]);
+    // La cellule FIN n'est jamais réécrite : la formule du Sheet se recalcule seule.
+  } else {
+    sh.getRange(row, 1, 1, values.length).setValues([values]);
+  }
 }
 
 function addCorde_(values) {
@@ -628,7 +636,15 @@ function addCorde_(values) {
   var target = hr; // dernière ligne non vide
   for (var i = hr; i < vals.length; i++)
     if (vals[i].join('').trim() !== '') target = i + 1;
-  sh.getRange(target + 1, 1, 1, values.length).setValues([values]);
+  var row = target + 1;
+  var finIdx = CORDES_HEADERS.indexOf('FIN');
+  if (finIdx > -1) {
+    if (finIdx > 0) sh.getRange(row, 1, 1, finIdx).setValues([values.slice(0, finIdx)]);
+    var afterCount = values.length - finIdx - 1;
+    if (afterCount > 0) sh.getRange(row, finIdx + 2, 1, afterCount).setValues([values.slice(finIdx + 1)]);
+  } else {
+    sh.getRange(row, 1, 1, values.length).setValues([values]);
+  }
 }
 
 // Réforme SANS supprimer de ligne (mise en page préservée) :
