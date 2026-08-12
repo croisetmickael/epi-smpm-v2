@@ -525,8 +525,8 @@ function computeSuiviStats_() {
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
-  lock.waitLock(20000);
   try {
+    lock.waitLock(20000);
     var q = JSON.parse(e.postData.contents);
     if      (q.action === 'updateEpi')     updateEpi_(q.row, q.values);
     else if (q.action === 'reformerEpi')   reformerEpi_(q.row, q.values, q.reforme);
