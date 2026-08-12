@@ -615,31 +615,32 @@ function updateAgent_(nom, prenom, info) {
 
 // Les feuilles STATIQUES / DYNAMIQUES / CORDELETTES sont des vues alimentées
 // par formules depuis RECAP : on n'écrit JAMAIS dedans (les formules feraient
-// la mise à jour toutes seules). Seul RECAP est modifié.
-// Durée de vie standard d'une corde avant réforme (voir règle affichée dans TABLEAU DE BORD du Sheet)
-var CORDE_DUREE_VIE_ANS = 7;
+// FIN et STATUT sont des formules natives du Sheet (calculées depuis FABRICATION). On ne les
+// réécrit JAMAIS depuis l'app, sous peine de détruire la formule définitivement : on écrit
+// seulement les colonnes autour, et Google Sheets recalcule ces cellules tout seul.
+var CORDES_COLONNES_PROTEGEES = ['FIN', 'STATUT'];
 
-// Calcule la date FIN (format "AAAA-MM") à partir de la date FABRICATION, en ajoutant la durée de vie.
-// On calcule nous-mêmes plutôt que de compter sur une formule/trigger du Sheet, qui ne se déclenche
-// pas forcément pour une modification faite via l'API (seulement pour une saisie manuelle dans l'UI).
-function computeFinFromFabrication_(fabricationStr) {
-  if (!fabricationStr) return '';
-  var s = String(fabricationStr).trim();
-  var m = s.match(/^(\d{4})-(\d{2})$/);          // format "AAAA-MM" utilisé dans le Sheet
-  if (m) return (parseInt(m[1], 10) + CORDE_DUREE_VIE_ANS) + '-' + m[2];
-  var d = new Date(s);                            // sinon on essaie de parser une vraie date
-  if (!isNaN(d.getTime())) {
-    d.setFullYear(d.getFullYear() + CORDE_DUREE_VIE_ANS);
-    return Utilities.formatDate(d, 'Europe/Paris', 'yyyy-MM');
+function writeCordeRow_(sh, row, values) {
+  var protectedIdx = {};
+  CORDES_COLONNES_PROTEGEES.forEach(function(h){
+    var i = CORDES_HEADERS.indexOf(h);
+    if (i > -1) protectedIdx[i] = true;
+  });
+  // Regroupe les colonnes non protégées en segments contigus pour minimiser les appels setValues.
+  var i = 0;
+  while (i < values.length) {
+    if (protectedIdx[i]) { i++; continue; }
+    var j = i;
+    var seg = [];
+    while (j < values.length && !protectedIdx[j]) { seg.push(values[j]); j++; }
+    sh.getRange(row, i + 1, 1, seg.length).setValues([seg]);
+    i = j;
   }
-  return s;   // format non reconnu : on ne perd pas l'info existante
 }
 
 function updateCorde_(row, values) {
   var sh = getSheetSmart_(ssCordes_(), RECAP);
-  var fabIdx = CORDES_HEADERS.indexOf('FABRICATION'), finIdx = CORDES_HEADERS.indexOf('FIN');
-  if (fabIdx > -1 && finIdx > -1) values[finIdx] = computeFinFromFabrication_(values[fabIdx]);
-  sh.getRange(row, 1, 1, values.length).setValues([values]);
+  writeCordeRow_(sh, row, values);
 }
 
 function addCorde_(values) {
@@ -649,9 +650,7 @@ function addCorde_(values) {
   var target = hr; // dernière ligne non vide
   for (var i = hr; i < vals.length; i++)
     if (vals[i].join('').trim() !== '') target = i + 1;
-  var fabIdx = CORDES_HEADERS.indexOf('FABRICATION'), finIdx = CORDES_HEADERS.indexOf('FIN');
-  if (fabIdx > -1 && finIdx > -1) values[finIdx] = computeFinFromFabrication_(values[fabIdx]);
-  sh.getRange(target + 1, 1, 1, values.length).setValues([values]);
+  writeCordeRow_(sh, target + 1, values);
 }
 
 // Réforme SANS supprimer de ligne (mise en page préservée) :
