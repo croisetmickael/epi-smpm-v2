@@ -281,7 +281,7 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
       <button class="tile" data-f="EPI"><span class="ic">🦺</span><div class="n" id="n-epi">–</div><div class="l">Alertes EPI</div></button>
       <button class="tile" data-f="CORDE"><span class="ic">🧗</span><div class="n" id="n-corde">–</div><div class="l">Alertes cordes</div></button>
       <button class="tile" data-f="REF"><span class="ic">📦</span><div class="n" id="n-ref">–</div><div class="l">Réformés</div></button>
-      <button class="tile" onclick="openPdfViewer('https://pdf-s-xi.vercel.app/','Fichiers PDF')"><span class="ic">📄</span><div class="n">↗</div><div class="l">Fichier PDF</div></button>
+      <button class="tile" onclick="openWebViewer('https://pdf-s-xi.vercel.app/','Fichiers PDF')"><span class="ic">📄</span><div class="n">↗</div><div class="l">Fichier PDF</div></button>
     </div>
     <button class="card" onclick="showStatsModal()" style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;border:none;background:linear-gradient(160deg,var(--navy),var(--navy2));color:#fff;padding:14px;width:100%;text-align:center;margin-bottom:0;margin-top:10px">
       <span style="font-size:1.2rem">📊</span>
@@ -357,6 +357,7 @@ nav button .bdg{position:absolute;margin-left:14px;margin-top:-4px;background:va
     <button onclick="closePdfViewer()" style="background:#D8232A;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">Fermer</button>
   </div>
   <div id="pdfViewerPages" style="flex:1;overflow:auto;background:#525659;text-align:center;padding:10px 0"></div>
+  <iframe id="pdfViewerWebFrame" src="" style="flex:1;border:0;display:none"></iframe>
 </div>
 
 <script src="config.js"></script>
@@ -782,9 +783,50 @@ function editCordeByRow(row){ const c=allCordes().find(x=>x.__row===row); if(c) 
 
 function cordeForm(c){
   const F=[['CATEGORIE','Catégorie'],['AFFECTATION','Affectation'],['INDICATIF','Indicatif'],['LONGUEUR','Longueur'],
-    ['MODELE','Modèle'],['NUMERO REF','N° réf'],['FABRICATION','Fabrication (JJ/MM/AAAA)'],['M.E.S','Mise en service (JJ/MM/AAAA)'],
-    ['FIN','Échéance / Fin (JJ/MM/AAAA)'],['STOCKAGE','Stockage']];
-  return `<div class="grid2">`+F.map(([k,l])=>`<div><label>${l}</label><input data-col="${k}" value="${esc(c[k]||'')}"></div>`).join('')+`</div>`;
+    ['MODELE','Modèle'],['NUMERO REF','N° réf'],['FABRICATION','Fabrication (AAAA-MM)'],['M.E.S','Mise en service (AAAA-MM)'],
+    ['FIN','Échéance / Fin (calculée automatiquement)'],['STOCKAGE','Stockage']];
+  return `<div class="grid2">`+F.map(([k,l])=>`<div><label>${l}</label><input data-col="${k}" value="${esc(c[k]||'')}"${k==='FIN'?' readonly style="background:#F0F0F0;color:#888"':''}></div>`).join('')+`</div>`;
+}
+// Calcule le prochain indicatif : PREFIXE(affectation)-D/S/C-NUMÉRO(+1 sur le max existant)-AA-MM(fabrication)
+function nextIndicatif_(categorie, affectation, fabrication){
+  const lettre = categorie==='DYNAMIQUE'?'D':categorie==='CORDELETTE'?'C':categorie==='STATIQUE'?'S':'';
+  const prefixe = (affectation||'').trim().split(/\s+/)[0].toUpperCase().replace(/[^A-Z0-9]/g,'');
+  let maxNum = 0;
+  ((DB.cordes && DB.cordes.rows) || []).forEach(r=>{
+    const ind = String((r.values && r.values[2]) || '');
+    const m = ind.match(/-(\d{5})-\d{2}-\d{2}$/);
+    if(m) maxNum = Math.max(maxNum, parseInt(m[1],10));
+  });
+  const numero = String(maxNum+1).padStart(5,'0');
+  let suffixe = '';
+  const fm = (fabrication||'').trim().match(/^(\d{4})-(\d{2})$/);
+  if(fm) suffixe = fm[1].slice(2)+'-'+fm[2];
+  if(!prefixe || !lettre) return '';
+  return prefixe+'-'+lettre+'-'+numero+(suffixe?'-'+suffixe:'');
+}
+function updateIndicatifPreview(){
+  const cat = document.querySelector('#sheetbox [data-col="CATEGORIE"]');
+  const aff = document.querySelector('#sheetbox [data-col="AFFECTATION"]');
+  const fab = document.querySelector('#sheetbox [data-col="FABRICATION"]');
+  const ind = document.querySelector('#sheetbox [data-col="INDICATIF"]');
+  if(!cat||!aff||!fab||!ind) return;
+  const suggestion = nextIndicatif_(cat.value, aff.value, fab.value);
+  if(suggestion) ind.value = suggestion;
+}
+function addCordeForm(){
+  const F=[['AFFECTATION','Affectation'],['LONGUEUR','Longueur'],
+    ['MODELE','Modèle'],['NUMERO REF','N° réf'],['FABRICATION','Fabrication (AAAA-MM)'],['M.E.S','Mise en service (AAAA-MM)'],
+    ['STOCKAGE','Stockage']];
+  const catSelect = `<div><label>Catégorie</label>
+    <select data-col="CATEGORIE" onchange="updateIndicatifPreview()">
+      <option value="">—</option>
+      <option value="DYNAMIQUE">DYNAMIQUE</option>
+      <option value="STATIQUE">STATIQUE</option>
+      <option value="CORDELETTE">CORDELETTE</option>
+    </select></div>`;
+  const indField = `<div><label>Indicatif (attribué automatiquement)</label><input data-col="INDICATIF" placeholder="Renseignez catégorie + affectation + fabrication"></div>`;
+  const rest = F.map(([k,l])=>`<div><label>${l}</label><input data-col="${k}" oninput="updateIndicatifPreview()" onchange="updateIndicatifPreview()"></div>`).join('');
+  return `<div class="grid2">${catSelect}${indField}${rest}</div>`;
 }
 function editCorde(c){
   const st=cordeStatus(c);
@@ -817,7 +859,7 @@ async function confirmReformCorde(row){
 }
 function addCorde(){
   openSheet(`<h3>Ajouter une corde</h3><div class="sub">La corde est ajoutée à la feuille CORDES du Google Sheet</div>
-    ${cordeForm({})}
+    ${addCordeForm()}
     <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annuler</button>
     <button class="btn" onclick="confirmAddCorde()">Ajouter</button></div>`);
 }
@@ -1040,8 +1082,11 @@ function togglePdfList(){
 async function openPdfViewer(url, title){
   const modal = document.getElementById('pdfViewerModal');
   const pages = document.getElementById('pdfViewerPages');
+  const webframe = document.getElementById('pdfViewerWebFrame');
   const ttl = document.getElementById('pdfViewerTitle');
   if(!modal || !pages) return;
+  if(webframe){ webframe.style.display = 'none'; webframe.src = ''; }
+  pages.style.display = 'block';
   if(ttl) ttl.textContent = title || '';
   pages.innerHTML = '<div class="loader" style="color:#fff"><div class="spin"></div>Chargement du document…</div>';
   modal.style.display = 'flex';
@@ -1067,11 +1112,26 @@ async function openPdfViewer(url, title){
     pages.innerHTML = '<div class="empty" style="color:#fff">Erreur d\'affichage du document.<br><small>'+esc(err.message)+'</small></div>';
   }
 }
+// Pour les contenus web (pas un PDF brut) : affichage classique en iframe, sans passer par PDF.js
+function openWebViewer(url, title){
+  const modal = document.getElementById('pdfViewerModal');
+  const pages = document.getElementById('pdfViewerPages');
+  const webframe = document.getElementById('pdfViewerWebFrame');
+  const ttl = document.getElementById('pdfViewerTitle');
+  if(!modal || !webframe) return;
+  if(pages){ pages.style.display = 'none'; pages.innerHTML = ''; }
+  if(ttl) ttl.textContent = title || '';
+  webframe.style.display = 'block';
+  webframe.src = url;
+  modal.style.display = 'flex';
+}
 function closePdfViewer(){
   const modal = document.getElementById('pdfViewerModal');
   const pages = document.getElementById('pdfViewerPages');
+  const webframe = document.getElementById('pdfViewerWebFrame');
   if(modal) modal.style.display = 'none';
   if(pages) pages.innerHTML = '';
+  if(webframe){ webframe.style.display = 'none'; webframe.src = ''; }
 }
 
 /* ---------------- Modale / navigation / chargement ---------------- */
