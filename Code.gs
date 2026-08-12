@@ -616,17 +616,30 @@ function updateAgent_(nom, prenom, info) {
 // Les feuilles STATIQUES / DYNAMIQUES / CORDELETTES sont des vues alimentées
 // par formules depuis RECAP : on n'écrit JAMAIS dedans (les formules feraient
 // la mise à jour toutes seules). Seul RECAP est modifié.
+// Durée de vie standard d'une corde avant réforme (voir règle affichée dans TABLEAU DE BORD du Sheet)
+var CORDE_DUREE_VIE_ANS = 7;
+
+// Calcule la date FIN (format "AAAA-MM") à partir de la date FABRICATION, en ajoutant la durée de vie.
+// On calcule nous-mêmes plutôt que de compter sur une formule/trigger du Sheet, qui ne se déclenche
+// pas forcément pour une modification faite via l'API (seulement pour une saisie manuelle dans l'UI).
+function computeFinFromFabrication_(fabricationStr) {
+  if (!fabricationStr) return '';
+  var s = String(fabricationStr).trim();
+  var m = s.match(/^(\d{4})-(\d{2})$/);          // format "AAAA-MM" utilisé dans le Sheet
+  if (m) return (parseInt(m[1], 10) + CORDE_DUREE_VIE_ANS) + '-' + m[2];
+  var d = new Date(s);                            // sinon on essaie de parser une vraie date
+  if (!isNaN(d.getTime())) {
+    d.setFullYear(d.getFullYear() + CORDE_DUREE_VIE_ANS);
+    return Utilities.formatDate(d, 'Europe/Paris', 'yyyy-MM');
+  }
+  return s;   // format non reconnu : on ne perd pas l'info existante
+}
+
 function updateCorde_(row, values) {
   var sh = getSheetSmart_(ssCordes_(), RECAP);
-  var finIdx = CORDES_HEADERS.indexOf('FIN');   // colonne calculée par formule dans le Sheet
-  if (finIdx > -1) {
-    if (finIdx > 0) sh.getRange(row, 1, 1, finIdx).setValues([values.slice(0, finIdx)]);
-    var afterCount = values.length - finIdx - 1;
-    if (afterCount > 0) sh.getRange(row, finIdx + 2, 1, afterCount).setValues([values.slice(finIdx + 1)]);
-    // La cellule FIN n'est jamais réécrite : la formule du Sheet se recalcule seule.
-  } else {
-    sh.getRange(row, 1, 1, values.length).setValues([values]);
-  }
+  var fabIdx = CORDES_HEADERS.indexOf('FABRICATION'), finIdx = CORDES_HEADERS.indexOf('FIN');
+  if (fabIdx > -1 && finIdx > -1) values[finIdx] = computeFinFromFabrication_(values[fabIdx]);
+  sh.getRange(row, 1, 1, values.length).setValues([values]);
 }
 
 function addCorde_(values) {
@@ -636,15 +649,9 @@ function addCorde_(values) {
   var target = hr; // dernière ligne non vide
   for (var i = hr; i < vals.length; i++)
     if (vals[i].join('').trim() !== '') target = i + 1;
-  var row = target + 1;
-  var finIdx = CORDES_HEADERS.indexOf('FIN');
-  if (finIdx > -1) {
-    if (finIdx > 0) sh.getRange(row, 1, 1, finIdx).setValues([values.slice(0, finIdx)]);
-    var afterCount = values.length - finIdx - 1;
-    if (afterCount > 0) sh.getRange(row, finIdx + 2, 1, afterCount).setValues([values.slice(finIdx + 1)]);
-  } else {
-    sh.getRange(row, 1, 1, values.length).setValues([values]);
-  }
+  var fabIdx = CORDES_HEADERS.indexOf('FABRICATION'), finIdx = CORDES_HEADERS.indexOf('FIN');
+  if (fabIdx > -1 && finIdx > -1) values[finIdx] = computeFinFromFabrication_(values[fabIdx]);
+  sh.getRange(target + 1, 1, 1, values.length).setValues([values]);
 }
 
 // Réforme SANS supprimer de ligne (mise en page préservée) :
