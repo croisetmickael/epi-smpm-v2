@@ -615,18 +615,32 @@ function updateAgent_(nom, prenom, info) {
 
 // Les feuilles STATIQUES / DYNAMIQUES / CORDELETTES sont des vues alimentées
 // par formules depuis RECAP : on n'écrit JAMAIS dedans (les formules feraient
-// la mise à jour toutes seules). Seul RECAP est modifié.
+// FIN et STATUT sont des formules natives du Sheet (calculées depuis FABRICATION). On ne les
+// réécrit JAMAIS depuis l'app, sous peine de détruire la formule définitivement : on écrit
+// seulement les colonnes autour, et Google Sheets recalcule ces cellules tout seul.
+var CORDES_COLONNES_PROTEGEES = ['FIN', 'STATUT'];
+
+function writeCordeRow_(sh, row, values) {
+  var protectedIdx = {};
+  CORDES_COLONNES_PROTEGEES.forEach(function(h){
+    var i = CORDES_HEADERS.indexOf(h);
+    if (i > -1) protectedIdx[i] = true;
+  });
+  // Regroupe les colonnes non protégées en segments contigus pour minimiser les appels setValues.
+  var i = 0;
+  while (i < values.length) {
+    if (protectedIdx[i]) { i++; continue; }
+    var j = i;
+    var seg = [];
+    while (j < values.length && !protectedIdx[j]) { seg.push(values[j]); j++; }
+    sh.getRange(row, i + 1, 1, seg.length).setValues([seg]);
+    i = j;
+  }
+}
+
 function updateCorde_(row, values) {
   var sh = getSheetSmart_(ssCordes_(), RECAP);
-  var finIdx = CORDES_HEADERS.indexOf('FIN');   // colonne calculée par formule dans le Sheet
-  if (finIdx > -1) {
-    if (finIdx > 0) sh.getRange(row, 1, 1, finIdx).setValues([values.slice(0, finIdx)]);
-    var afterCount = values.length - finIdx - 1;
-    if (afterCount > 0) sh.getRange(row, finIdx + 2, 1, afterCount).setValues([values.slice(finIdx + 1)]);
-    // La cellule FIN n'est jamais réécrite : la formule du Sheet se recalcule seule.
-  } else {
-    sh.getRange(row, 1, 1, values.length).setValues([values]);
-  }
+  writeCordeRow_(sh, row, values);
 }
 
 function addCorde_(values) {
@@ -636,15 +650,7 @@ function addCorde_(values) {
   var target = hr; // dernière ligne non vide
   for (var i = hr; i < vals.length; i++)
     if (vals[i].join('').trim() !== '') target = i + 1;
-  var row = target + 1;
-  var finIdx = CORDES_HEADERS.indexOf('FIN');
-  if (finIdx > -1) {
-    if (finIdx > 0) sh.getRange(row, 1, 1, finIdx).setValues([values.slice(0, finIdx)]);
-    var afterCount = values.length - finIdx - 1;
-    if (afterCount > 0) sh.getRange(row, finIdx + 2, 1, afterCount).setValues([values.slice(finIdx + 1)]);
-  } else {
-    sh.getRange(row, 1, 1, values.length).setValues([values]);
-  }
+  writeCordeRow_(sh, target + 1, values);
 }
 
 // Réforme SANS supprimer de ligne (mise en page préservée) :

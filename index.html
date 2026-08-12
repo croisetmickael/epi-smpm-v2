@@ -782,9 +782,9 @@ function editCordeByRow(row){ const c=allCordes().find(x=>x.__row===row); if(c) 
 
 function cordeForm(c){
   const F=[['CATEGORIE','Catégorie'],['AFFECTATION','Affectation'],['INDICATIF','Indicatif'],['LONGUEUR','Longueur'],
-    ['MODELE','Modèle'],['NUMERO REF','N° réf'],['FABRICATION','Fabrication (JJ/MM/AAAA)'],['M.E.S','Mise en service (JJ/MM/AAAA)'],
-    ['FIN','Échéance / Fin (JJ/MM/AAAA)'],['STOCKAGE','Stockage']];
-  return `<div class="grid2">`+F.map(([k,l])=>`<div><label>${l}</label><input data-col="${k}" value="${esc(c[k]||'')}"></div>`).join('')+`</div>`;
+    ['MODELE','Modèle'],['NUMERO REF','N° réf'],['FABRICATION','Fabrication (AAAA-MM)'],['M.E.S','Mise en service (AAAA-MM)'],
+    ['FIN','Échéance / Fin (calculée automatiquement)'],['STOCKAGE','Stockage']];
+  return `<div class="grid2">`+F.map(([k,l])=>`<div><label>${l}</label><input data-col="${k}" value="${esc(c[k]||'')}"${k==='FIN'?' readonly style="background:#F0F0F0;color:#888"':''}></div>`).join('')+`</div>`;
 }
 function editCorde(c){
   const st=cordeStatus(c);
