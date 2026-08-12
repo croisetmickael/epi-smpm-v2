@@ -786,6 +786,47 @@ function cordeForm(c){
     ['FIN','Échéance / Fin (calculée automatiquement)'],['STOCKAGE','Stockage']];
   return `<div class="grid2">`+F.map(([k,l])=>`<div><label>${l}</label><input data-col="${k}" value="${esc(c[k]||'')}"${k==='FIN'?' readonly style="background:#F0F0F0;color:#888"':''}></div>`).join('')+`</div>`;
 }
+// Calcule le prochain indicatif : PREFIXE(affectation)-D/S/C-NUMÉRO(+1 sur le max existant)-AA-MM(fabrication)
+function nextIndicatif_(categorie, affectation, fabrication){
+  const lettre = categorie==='DYNAMIQUE'?'D':categorie==='CORDELETTE'?'C':categorie==='STATIQUE'?'S':'';
+  const prefixe = (affectation||'').trim().split(/\s+/)[0].toUpperCase().replace(/[^A-Z0-9]/g,'');
+  let maxNum = 0;
+  ((DB.cordes && DB.cordes.rows) || []).forEach(r=>{
+    const ind = String((r.values && r.values[2]) || '');
+    const m = ind.match(/-(\d{5})-\d{2}-\d{2}$/);
+    if(m) maxNum = Math.max(maxNum, parseInt(m[1],10));
+  });
+  const numero = String(maxNum+1).padStart(5,'0');
+  let suffixe = '';
+  const fm = (fabrication||'').trim().match(/^(\d{4})-(\d{2})$/);
+  if(fm) suffixe = fm[1].slice(2)+'-'+fm[2];
+  if(!prefixe || !lettre) return '';
+  return prefixe+'-'+lettre+'-'+numero+(suffixe?'-'+suffixe:'');
+}
+function updateIndicatifPreview(){
+  const cat = document.querySelector('#sheetbox [data-col="CATEGORIE"]');
+  const aff = document.querySelector('#sheetbox [data-col="AFFECTATION"]');
+  const fab = document.querySelector('#sheetbox [data-col="FABRICATION"]');
+  const ind = document.querySelector('#sheetbox [data-col="INDICATIF"]');
+  if(!cat||!aff||!fab||!ind) return;
+  const suggestion = nextIndicatif_(cat.value, aff.value, fab.value);
+  if(suggestion) ind.value = suggestion;
+}
+function addCordeForm(){
+  const F=[['AFFECTATION','Affectation'],['LONGUEUR','Longueur'],
+    ['MODELE','Modèle'],['NUMERO REF','N° réf'],['FABRICATION','Fabrication (AAAA-MM)'],['M.E.S','Mise en service (AAAA-MM)'],
+    ['STOCKAGE','Stockage']];
+  const catSelect = `<div><label>Catégorie</label>
+    <select data-col="CATEGORIE" onchange="updateIndicatifPreview()">
+      <option value="">—</option>
+      <option value="DYNAMIQUE">DYNAMIQUE</option>
+      <option value="STATIQUE">STATIQUE</option>
+      <option value="CORDELETTE">CORDELETTE</option>
+    </select></div>`;
+  const indField = `<div><label>Indicatif (attribué automatiquement)</label><input data-col="INDICATIF" placeholder="Renseignez catégorie + affectation + fabrication"></div>`;
+  const rest = F.map(([k,l])=>`<div><label>${l}</label><input data-col="${k}" oninput="updateIndicatifPreview()" onchange="updateIndicatifPreview()"></div>`).join('');
+  return `<div class="grid2">${catSelect}${indField}${rest}</div>`;
+}
 function editCorde(c){
   const st=cordeStatus(c);
   openSheet(`<h3>${esc(c.INDICATIF||'Corde')}</h3><div class="sub">${st.age!=null?st.age+' ans en service · ':''}${esc(st.why||'État normal')}</div>
@@ -817,7 +858,7 @@ async function confirmReformCorde(row){
 }
 function addCorde(){
   openSheet(`<h3>Ajouter une corde</h3><div class="sub">La corde est ajoutée à la feuille CORDES du Google Sheet</div>
-    ${cordeForm({})}
+    ${addCordeForm()}
     <div class="actions"><button class="btn ghost" onclick="closeSheet()">Annuler</button>
     <button class="btn" onclick="confirmAddCorde()">Ajouter</button></div>`);
 }
